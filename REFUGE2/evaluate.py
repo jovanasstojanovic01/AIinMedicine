@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 # Uvoz naših lokalnih modula
-import config
+from .. import config
 from src import RefugeDataset, val_test_transforms, RefugeUNet, extract_clinical_parameters, calculate_dice_score
 
 def main():

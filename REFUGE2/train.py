@@ -5,7 +5,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 # Uvoz naših lokalnih modula
-import config
+from .. import config
 from src import RefugeDataset, train_transforms, val_test_transforms, RefugeUNet, CombinedDiceBCELoss
 
 def train_epoch(model, loader, optimizer, loss_fn, scaler, device):

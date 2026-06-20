@@ -4,7 +4,7 @@ import numpy as np
 from torch.utils.data import Dataset
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
-import config
+from .. import config
 
 class RefugeDataset(Dataset):
     def __init__(self, root_dir, split='train', transforms=None):

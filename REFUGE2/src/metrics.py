@@ -2,11 +2,7 @@ import cv2
 import numpy as np
 
 def extract_clinical_parameters(pred_disc, pred_cup):
-    """
-    Prima binarne maske diska i kupa (2D NumPy nizovi sa vrednostima 0 ili 1)
-    i računa sve važne kliničke parametre za glaukom.
-    """
-    # Inicijalizacija rezultata sa podrazumevanim vrednostima u slučaju praznih maski
+
     results = {
         "vCDR": 0.0,
         "hCDR": 0.0,
@@ -17,19 +13,15 @@ def extract_clinical_parameters(pred_disc, pred_cup):
         "diagnosis": "Healthy"
     }
 
-    # Pretvaranje maski u uint8 (0 ili 255) za OpenCV konture
     disc_img = (pred_disc * 255).astype(np.uint8)
     cup_img = (pred_cup * 255).astype(np.uint8)
 
-    # 1. Pronalaženje kontura i dimenzija (Vertikalni i Horizontalni prečnici)
-    # Koristimo bounding box (granični pravougaonik) oko maski za prečnike
     disc_contours, _ = cv2.findContours(disc_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cup_contours, _ = cv2.findContours(cup_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     if len(disc_contours) == 0 or len(cup_contours) == 0:
-        return results  # Ako model promaši i ne nađe ništa, vraćamo nule
+        return results  
 
-    # Uzimamo najveće konture (za slučaj da ima šuma)
     c_disc = max(disc_contours, key=cv2.contourArea)
     c_cup = max(cup_contours, key=cv2.contourArea)
 
