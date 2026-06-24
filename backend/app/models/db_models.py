@@ -1,17 +1,6 @@
-"""
-Database models for the Glaucoma Detection & Progression Platform.
-
-Entity relationships
-────────────────────
-Patient  1──* Eye  1──1 BaselineVisit  1──* FollowUpVisit
-                                              └── each visit may have a CFP image
-                                                  and stores extracted CDR / VF features
-Patient  1──* ProgressionPrediction   (one prediction per eye, re-computed on demand)
-"""
-
+# app/models/models.py
 from datetime import datetime
 from app.extensions import db
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Patient
@@ -20,159 +9,95 @@ class Patient(db.Model):
     __tablename__ = "patients"
 
     id            = db.Column(db.Integer, primary_key=True)
+    jmbg          = db.Column(db.String(13), unique=True, nullable=False, index=True) # Ključno za brzu pretragu
     first_name    = db.Column(db.String(100), nullable=False)
     last_name     = db.Column(db.String(100), nullable=False)
-    date_of_birth = db.Column(db.Date, nullable=False)
-    gender        = db.Column(db.String(10))          # 'M' | 'F' | 'Other'
+    birth_year    = db.Column(db.Integer, nullable=False) # Korisnik unosi godište
+    gender        = db.Column(db.String(10))              # 'M' | 'F' | 'Other'
+    family_history= db.Column(db.Text)                    # Porodična anamneza
+    general_notes = db.Column(db.Text)                    # Opšte napomene
+    
     created_at    = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at    = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # relationships
-    eyes        = db.relationship("Eye", back_populates="patient",
-                                  cascade="all, delete-orphan")
-    predictions = db.relationship("ProgressionPrediction", back_populates="patient",
-                                  cascade="all, delete-orphan")
+    # Relationships
+    visits      = db.relationship("Visit", back_populates="patient", cascade="all, delete-orphan")
+    predictions = db.relationship("ProgressionPrediction", back_populates="patient", cascade="all, delete-orphan")
 
     def __repr__(self):
-        return f"<Patient {self.id} {self.first_name} {self.last_name}>"
+        return f"<Patient {self.jmbg} - {self.first_name} {self.last_name}>"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Eye  (OD = right / OS = left)
+# Visit (Pregled - Inicijalni ili Kontrola)
 # ─────────────────────────────────────────────────────────────────────────────
-class Eye(db.Model):
-    __tablename__ = "eyes"
+class Visit(db.Model):
+    __tablename__ = "visits"
+
+    id             = db.Column(db.Integer, primary_key=True)
+    patient_id     = db.Column(db.Integer, db.ForeignKey("patients.id"), nullable=False)
+    visit_type     = db.Column(db.String(20), nullable=False) # 'INITIAL' | 'CONTROL'
+    visit_date     = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Lekarski unosi zajednički za ceo pregled
+    clinical_conclusion = db.Column(db.Text) # Klinički zaključak lekara
+    therapy             = db.Column(db.Text) # Terapija
+
+    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    patient  = db.relationship("Patient", back_populates="visits")
+    eye_data = db.relationship("EyeExamination", back_populates="visit", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<Visit {self.id} type={self.visit_type} patient={self.patient_id}>"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Eye Examination (Podaci o konkretnom oku unutar jednog pregleda)
+# ─────────────────────────────────────────────────────────────────────────────
+class EyeExamination(db.Model):
+    __tablename__ = "eye_examinations"
 
     id            = db.Column(db.Integer, primary_key=True)
-    patient_id    = db.Column(db.Integer, db.ForeignKey("patients.id"), nullable=False)
-    laterality    = db.Column(db.String(2), nullable=False)   # 'OD' | 'OS'
-    created_at    = db.Column(db.DateTime, default=datetime.utcnow)
+    visit_id      = db.Column(db.Integer, db.ForeignKey("visits.id"), nullable=False)
+    laterality    = db.Column(db.String(2), nullable=False)  # 'OD' (Desno) | 'OS' (Levo)
+    
+    # Klinička merenja uneta ručno
+    iop           = db.Column(db.Float)  # Intraokularni pritisak
+    cfp_image_path = db.Column(db.String(512)) # Putanja do fundus slike
 
-    # relationships
-    patient          = db.relationship("Patient", back_populates="eyes")
-    baseline_visit   = db.relationship("BaselineVisit", back_populates="eye",
-                                       uselist=False, cascade="all, delete-orphan")
-    followup_visits  = db.relationship("FollowUpVisit", back_populates="eye",
-                                       cascade="all, delete-orphan",
-                                       order_by="FollowUpVisit.visit_number")
-    predictions      = db.relationship("ProgressionPrediction", back_populates="eye",
-                                       cascade="all, delete-orphan")
+    # Parametri koje izvlači RefugeUNet iz slike automatski
+    vcdr            = db.Column(db.Float)
+    disc_mask_path  = db.Column(db.String(512))
+    cup_mask_path   = db.Column(db.String(512))
+    glaucoma_suspect = db.Column(db.Boolean) # Evaluacija modela (Ima/Nema)
 
-    __table_args__ = (
-        db.UniqueConstraint("patient_id", "laterality", name="uq_patient_eye"),
-    )
+    # Dodatni GRAPE/LSTM parametri (opciono, ako se unose)
+    vf_data         = db.Column(db.Text)   # JSON string za visual field 61-point
+    oct_rnfl_mean   = db.Column(db.Float)  # Iz trening fajlova
 
-    def __repr__(self):
-        return f"<Eye patient={self.patient_id} {self.laterality}>"
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Shared mixin: clinical + VF + CDR columns common to both visit types
-# ─────────────────────────────────────────────────────────────────────────────
-class VisitMixin:
-    """Columns shared by BaselineVisit and FollowUpVisit."""
-
-    # Clinical measurements
-    iop           = db.Column(db.Float)           # intra-ocular pressure (mmHg)
-    cfp_image_path = db.Column(db.String(512))    # relative path to uploaded CFP image
-
-    # CDR values extracted by RefugeUNet from the CFP
-    vcdr          = db.Column(db.Float)
-    hcdr          = db.Column(db.Float)
-    acdr          = db.Column(db.Float)
-    rim_area_pixels = db.Column(db.Float)
-
-    # Visual field — 61-point HFA 24-2 grid stored as a JSON array string
-    # e.g. "[21, 22, 20, ...]"
-    vf_data       = db.Column(db.Text)            # JSON array of 61 integers
-
-    # Raw segmentation masks paths (optional; set after RefugeUNet runs)
-    disc_mask_path = db.Column(db.String(512))
-    cup_mask_path  = db.Column(db.String(512))
-
-    created_at    = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at    = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Baseline Visit
-# ─────────────────────────────────────────────────────────────────────────────
-class BaselineVisit(VisitMixin, db.Model):
-    __tablename__ = "baseline_visits"
-
-    id             = db.Column(db.Integer, primary_key=True)
-    eye_id         = db.Column(db.Integer, db.ForeignKey("eyes.id"), nullable=False, unique=True)
-
-    # Extra baseline-only fields from the GRAPE dataset
-    age            = db.Column(db.Float)
-    cct            = db.Column(db.Float)           # central corneal thickness (µm)
-    total_visits   = db.Column(db.Integer)
-    progression_status = db.Column(db.String(20))  # ground-truth label (if known)
-    glaucoma_category  = db.Column(db.String(100))
-    oct_rnfl_mean  = db.Column(db.Float)
-    oct_rnfl_s     = db.Column(db.Float)
-    oct_rnfl_n     = db.Column(db.Float)
-    oct_rnfl_i     = db.Column(db.Float)
-    oct_rnfl_t     = db.Column(db.Float)
-    acquisition_device = db.Column(db.String(200))
-    image_resolution   = db.Column(db.String(50))
-
-    # relationships
-    eye = db.relationship("Eye", back_populates="baseline_visit")
-
-    def __repr__(self):
-        return f"<BaselineVisit eye={self.eye_id}>"
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Follow-up Visit
-# ─────────────────────────────────────────────────────────────────────────────
-class FollowUpVisit(VisitMixin, db.Model):
-    __tablename__ = "followup_visits"
-
-    id             = db.Column(db.Integer, primary_key=True)
-    eye_id         = db.Column(db.Integer, db.ForeignKey("eyes.id"), nullable=False)
-    visit_number   = db.Column(db.Integer, nullable=False)   # 1, 2, 3 …
-    interval_years = db.Column(db.Float)                     # years since baseline
-    acquisition_device = db.Column(db.String(200))
-    image_resolution   = db.Column(db.String(50))
-
-    # relationships
-    eye = db.relationship("Eye", back_populates="followup_visits")
+    # Relationships
+    visit = db.relationship("Visit", back_populates="eye_data")
 
     __table_args__ = (
-        db.UniqueConstraint("eye_id", "visit_number", name="uq_eye_visit"),
+        db.UniqueConstraint("visit_id", "laterality", name="uq_visit_eye"),
     )
-
-    def __repr__(self):
-        return f"<FollowUpVisit eye={self.eye_id} visit={self.visit_number}>"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Progression Prediction  (result produced by the LSTM+XGBoost ensemble)
+# Progression Prediction (Rezultat LSTM+XGBoost ansambla)
 # ─────────────────────────────────────────────────────────────────────────────
 class ProgressionPrediction(db.Model):
     __tablename__ = "progression_predictions"
 
     id              = db.Column(db.Integer, primary_key=True)
     patient_id      = db.Column(db.Integer, db.ForeignKey("patients.id"), nullable=False)
-    eye_id          = db.Column(db.Integer, db.ForeignKey("eyes.id"), nullable=False)
-
-    # Ensemble probabilities
-    lstm_prob       = db.Column(db.Float)          # LSTM sigmoid output
-    xgb_prob        = db.Column(db.Float)          # XGBoost predict_proba output
-    ensemble_prob   = db.Column(db.Float)          # (lstm + xgb) / 2
-    predicted_label = db.Column(db.Integer)        # 0 = stable, 1 = progressing
-    threshold_used  = db.Column(db.Float, default=0.5)
-
-    # How many time-steps were available when this prediction was made
+    laterality      = db.Column(db.String(2), nullable=False) # Predikcija progresije za levo ili desno oko
+    
+    ensemble_prob   = db.Column(db.Float)  # Finalni skor (0.4 GRU + 0.6 XGB)
+    predicted_label = db.Column(db.Integer) # 0 = stabilno, 1 = progresija
     num_visits_used = db.Column(db.Integer)
     predicted_at    = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # relationships
     patient = db.relationship("Patient", back_populates="predictions")
-    eye     = db.relationship("Eye",     back_populates="predictions")
-
-    def __repr__(self):
-        return (f"<ProgressionPrediction eye={self.eye_id} "
-                f"prob={self.ensemble_prob:.3f} label={self.predicted_label}>")

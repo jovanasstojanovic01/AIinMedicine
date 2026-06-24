@@ -1,158 +1,119 @@
-"""
-Marshmallow schemas for request validation and response serialization.
-"""
-
+# app/schemas.py
 import json
-from marshmallow import fields, validate, validates, ValidationError, pre_load, post_load
+from marshmallow import fields, validate, validates, ValidationError, pre_load
 from app.extensions import ma
 from app.models.db_models import (
-    Patient, Eye, BaselineVisit, FollowUpVisit, ProgressionPrediction
+    Patient, Visit, EyeExamination, ProgressionPrediction
 )
 
 LATERALITY_CHOICES = ["OD", "OS"]
 GENDER_CHOICES = ["M", "F", "Other"]
+VISIT_TYPE_CHOICES = ["INITIAL", "CONTROL"]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Patient
+# Patient Schema
 # ─────────────────────────────────────────────────────────────────────────────
 class PatientSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Patient
         load_instance = True
-        exclude = ("predictions",)
+        exclude = ("predictions", "visits") # Ne šaljemo celu istoriju kroz bazični šablon pacijenta
 
-    first_name    = fields.Str(required=True, validate=validate.Length(min=1, max=100))
-    last_name     = fields.Str(required=True, validate=validate.Length(min=1, max=100))
-    date_of_birth = fields.Date(required=True)
-    gender        = fields.Str(validate=validate.OneOf(GENDER_CHOICES))
-
-    # Nested: show brief eye summaries on GET
-    eyes = fields.Nested(lambda: EyeBriefSchema(), many=True, dump_only=True)
-
-
-class EyeBriefSchema(ma.SQLAlchemyAutoSchema):
-    class Meta:
-        model = Eye
-        fields = ("id", "laterality", "created_at")
+    jmbg           = fields.Str(required=True, validate=validate.Length(equal=13))
+    first_name     = fields.Str(required=True, validate=validate.Length(min=1, max=100))
+    last_name      = fields.Str(required=True, validate=validate.Length(min=1, max=100))
+    birth_year     = fields.Int(required=True, validate=validate.Range(min=1900, max=2026))
+    gender         = fields.Str(validate=validate.OneOf(GENDER_CHOICES))
+    family_history = fields.Str(allow_none=True)
+    general_notes  = fields.Str(allow_none=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Eye
+# Eye Examination Schema (Podaci za jedno oko unutar pregleda)
 # ─────────────────────────────────────────────────────────────────────────────
-class EyeSchema(ma.SQLAlchemyAutoSchema):
+class EyeExaminationSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
-        model = Eye
+        model = EyeExamination
         load_instance = True
+        include_fk = True # Uključujemo visit_id ako zatreba
+        exclude = ("cfp_image_path", "disc_mask_path", "cup_mask_path") # Sakrivamo sirove putanje na disku
 
-    laterality = fields.Str(required=True, validate=validate.OneOf(LATERALITY_CHOICES))
-    patient_id = fields.Int(required=True, load_only=True)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Shared visit mixin helper
-# ─────────────────────────────────────────────────────────────────────────────
-def _vf_data_field():
-    """Returns a field that accepts a JSON array of 61 integers or a raw list."""
-    return fields.Raw(
-        metadata={"description": "Visual field data: list of 61 integers or JSON string"}
-    )
-
-
-class _VisitSchemaMixin:
-    iop             = fields.Float()
-    vcdr            = fields.Float()
-    hcdr            = fields.Float()
-    acdr            = fields.Float()
-    rim_area_pixels = fields.Float()
-    vf_data         = fields.Raw()   # accepted as list[int] or JSON string
+    laterality       = fields.Str(required=True, validate=validate.OneOf(LATERALITY_CHOICES))
+    iop              = fields.Float(allow_none=True)
+    vcdr             = fields.Float(allow_none=True)
+    glaucoma_suspect = fields.Boolean(allow_none=True)
+    oct_rnfl_mean    = fields.Float(allow_none=True)
+    vf_data          = fields.Raw(allow_none=True) # Može lista, a u bazi je Text
 
     @validates("vf_data")
     def validate_vf(self, value):
-        if value is None:
+        if value is None or value == "":
             return
-        # Accept both a Python list and a pre-serialised JSON string
+        
+        # Ako stigne kao JSON string, parsiraj ga za proveru
         if isinstance(value, str):
             try:
                 value = json.loads(value)
             except json.JSONDecodeError:
-                raise ValidationError("vf_data must be a JSON array of integers.")
+                raise ValidationError("vf_data must be a valid JSON array of integers.")
+                
         if not isinstance(value, list):
-            raise ValidationError("vf_data must be a list.")
+            raise ValidationError("vf_data must be a list (array).")
+            
         if len(value) != 61:
             raise ValidationError(f"vf_data must have exactly 61 values (got {len(value)}).")
 
     @pre_load
     def coerce_vf_to_string(self, data, **kwargs):
-        """Store vf_data internally as a JSON string in the DB."""
+        """Pre nego što ode u bazu, ako je niz, pretvori ga u JSON string."""
         if "vf_data" in data and isinstance(data["vf_data"], list):
             data["vf_data"] = json.dumps(data["vf_data"])
         return data
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Baseline Visit
+# Visit Schema (Krovni pregled koji ugnježđuje podatke za oba oka)
 # ─────────────────────────────────────────────────────────────────────────────
-class BaselineVisitSchema(_VisitSchemaMixin, ma.SQLAlchemyAutoSchema):
+class VisitSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
-        model = BaselineVisit
+        model = Visit
         load_instance = True
-        exclude = ("cfp_image_path", "disc_mask_path", "cup_mask_path")
+        include_fk = True
 
-    eye_id             = fields.Int(required=True, load_only=True)
-    age                = fields.Float()
-    cct                = fields.Float()
-    total_visits       = fields.Int()
-    progression_status = fields.Str()
-    glaucoma_category  = fields.Str()
-    oct_rnfl_mean      = fields.Float()
-    oct_rnfl_s         = fields.Float()
-    oct_rnfl_n         = fields.Float()
-    oct_rnfl_i         = fields.Float()
-    oct_rnfl_t         = fields.Float()
-    acquisition_device = fields.Str()
-    image_resolution   = fields.Str()
+    visit_type          = fields.Str(required=True, validate=validate.OneOf(VISIT_TYPE_CHOICES))
+    clinical_conclusion = fields.Str(allow_none=True)
+    therapy             = fields.Str(allow_none=True)
+    visit_date          = fields.DateTime(dump_only=True)
+
+    # Polja za ugnježđivanje (Nested Relationships)
+    # Kada povlačimo pregled, prikazaće nam i podatke o pacijentu i preglede očiju
+    patient  = fields.Nested(PatientSchema, dump_only=True)
+    eye_data = fields.Nested(EyeExaminationSchema, many=True, dump_only=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Follow-up Visit
-# ─────────────────────────────────────────────────────────────────────────────
-class FollowUpVisitSchema(_VisitSchemaMixin, ma.SQLAlchemyAutoSchema):
-    class Meta:
-        model = FollowUpVisit
-        load_instance = True
-        exclude = ("cfp_image_path", "disc_mask_path", "cup_mask_path")
-
-    eye_id         = fields.Int(required=True, load_only=True)
-    visit_number   = fields.Int(required=True)
-    interval_years = fields.Float()
-    acquisition_device = fields.Str()
-    image_resolution   = fields.Str()
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Progression Prediction (read-only)
+# Progression Prediction Schema (Read-only)
 # ─────────────────────────────────────────────────────────────────────────────
 class ProgressionPredictionSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = ProgressionPrediction
-        load_instance = False   # predictions are created by the ML pipeline, not by users
+        load_instance = False # Predikcije pravi isključivo naš ML pipeline
+
+    predicted_at = fields.DateTime(dump_only=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Singleton instances (used in routes)
+# Singleton instance za rute
 # ─────────────────────────────────────────────────────────────────────────────
-patient_schema        = PatientSchema()
-patients_schema       = PatientSchema(many=True)
+patient_schema         = PatientSchema()
+patients_schema        = PatientSchema(many=True)
 
-eye_schema            = EyeSchema()
-eyes_schema           = EyeSchema(many=True)
+eye_examination_schema = EyeExaminationSchema()
+eye_examinations_schema = EyeExaminationSchema(many=True)
 
-baseline_schema       = BaselineVisitSchema()
-baselines_schema      = BaselineVisitSchema(many=True)
+visit_schema           = VisitSchema()
+visits_schema          = VisitSchema(many=True)
 
-followup_schema       = FollowUpVisitSchema()
-followups_schema      = FollowUpVisitSchema(many=True)
-
-prediction_schema     = ProgressionPredictionSchema()
-predictions_schema    = ProgressionPredictionSchema(many=True)
+prediction_schema      = ProgressionPredictionSchema()
+predictions_schema     = ProgressionPredictionSchema(many=True)
