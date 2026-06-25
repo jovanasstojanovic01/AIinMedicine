@@ -98,9 +98,9 @@ def upload_visit_images(exam_id):
 
             multimedija.od_image = unikatno_ime_od
             multimedija.od_vcdr = ml_res_od["vcdr"]
-            multimedija.od_hcdr = ml_res_od["vcdr"]
-            multimedija.od_acdr = ml_res_od["vcdr"]
-            multimedija.od_rim_area_pixels = 4500.0 
+            multimedija.od_hcdr = ml_res_od["hcdr"]
+            multimedija.od_acdr = ml_res_od["acdr"]
+            multimedija.od_rim_area_pixels = float(ml_res_od["rim_area"])
 
         
         if img_os and img_os.filename != '':
@@ -119,9 +119,9 @@ def upload_visit_images(exam_id):
 
             multimedija.os_image = unikatno_ime_os
             multimedija.os_vcdr = ml_res_os["vcdr"]
-            multimedija.os_hcdr = ml_res_os["vcdr"]
-            multimedija.os_acdr = ml_res_os["vcdr"]
-            multimedija.os_rim_area_pixels = 4500.0
+            multimedija.os_hcdr = ml_res_os["hcdr"]
+            multimedija.os_acdr = ml_res_os["acdr"]
+            multimedija.os_rim_area_pixels = float(ml_res_os["rim_area"])
 
         db.session.commit()
         return ok(visit_schema.dump(pregled), "Slike uspešno dodate i analizirane kroz UNet.")

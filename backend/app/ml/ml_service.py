@@ -65,57 +65,30 @@ class MLInferenceService:
             logits = self.unet(input_tensor)
             probabilities = torch.sigmoid(logits)
             masks = (probabilities > 0.5).int().squeeze(0).cpu().numpy()
-            
-        optic_disc_mask = masks[0]  
-        optic_cup_mask = masks[1]   
-        
-        
-        
-        
-        
-        height, width = optic_disc_mask.shape
+
+        pred_disc = masks[0]
+        pred_cup = masks[1]
+
+        klinicki_parametri = self.unet.extract_clinical_parameters(pred_disc, pred_cup)
+        height, width = pred_disc.shape
         rgb_mask = np.zeros((height, width, 3), dtype=np.uint8)
-        
-        
-        rgb_mask[optic_disc_mask == 1] = [255, 0, 0]
-        
-        
-        
-        rgb_mask[optic_cup_mask == 1] = [0, 255, 0]
-        
-        
+        rgb_mask[pred_disc == 1] = [255, 0, 0]
+        rgb_mask[pred_cup == 1] = [0, 255, 0]
+
         mask_image = Image.fromarray(rgb_mask)
-        
-        
         buffer = io.BytesIO()
         mask_image.save(buffer, format="PNG")
         mask_bytes = buffer.getvalue()
-        
-        
-        
-        
-        disc_rows = np.any(optic_disc_mask, axis=1)
-        cup_rows = np.any(optic_cup_mask, axis=1)
-        
-        if not np.any(disc_rows) or not np.any(cup_rows):
-            vcdr = 0.0
-        else:
-            disc_diameter = np.max(np.where(disc_rows)) - np.min(np.where(disc_rows)) + 1
-            cup_diameter = np.max(np.where(cup_rows)) - np.min(np.where(cup_rows)) + 1
-            vcdr = float(cup_diameter / disc_diameter)
-        
-        
-        
-        
+
         return {
-            "vcdr": float(vcdr),
-            "status": "High Risk / Glaucoma Suspect" if vcdr > 0.65 else "Normal",
-            "mask_bytes": mask_bytes,  
-            "metrics": {
-                "disc_pixel_area": int(np.sum(optic_disc_mask)),
-                "cup_pixel_area": int(np.sum(optic_cup_mask))
-            }
+            "vcdr": klinicki_parametri["vCDR"],
+            "hcdr": klinicki_parametri["hCDR"],
+            "acdr": klinicki_parametri["aCDR"],
+            "rim_area": klinicki_parametri["rim_area_pixels"],
+            "status": klinicki_parametri["diagnosis"],
+            "mask_bytes": mask_bytes,
         }
+
     def predict_progression(self, sequence_data):
         """
         Input matrix shape from frontend: [Timesteps, 5]
