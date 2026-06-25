@@ -58,20 +58,40 @@ class MLInferenceService:
         
         tensor = transform_pipeline(image).unsqueeze(0)
         return tensor.to(self.device)
-    
     def predict_glaucoma_segmentation(self, raw_image_bytes):
         input_tensor = self._preprocess_image(raw_image_bytes)
         
         with torch.no_grad():
             logits = self.unet(input_tensor)
             probabilities = torch.sigmoid(logits)
-            
-            
             masks = (probabilities > 0.5).int().squeeze(0).cpu().numpy()
             
+        optic_disc_mask = masks[0]  
+        optic_cup_mask = masks[1]   
         
-        optic_disc_mask = masks[0]
-        optic_cup_mask = masks[1]
+        
+        
+        
+        
+        height, width = optic_disc_mask.shape
+        rgb_mask = np.zeros((height, width, 3), dtype=np.uint8)
+        
+        
+        rgb_mask[optic_disc_mask == 1] = [255, 0, 0]
+        
+        
+        
+        rgb_mask[optic_cup_mask == 1] = [0, 255, 0]
+        
+        
+        mask_image = Image.fromarray(rgb_mask)
+        
+        
+        buffer = io.BytesIO()
+        mask_image.save(buffer, format="PNG")
+        mask_bytes = buffer.getvalue()
+        
+        
         
         
         disc_rows = np.any(optic_disc_mask, axis=1)
@@ -84,30 +104,18 @@ class MLInferenceService:
             cup_diameter = np.max(np.where(cup_rows)) - np.min(np.where(cup_rows)) + 1
             vcdr = float(cup_diameter / disc_diameter)
         
+        
+        
+        
         return {
             "vcdr": float(vcdr),
             "status": "High Risk / Glaucoma Suspect" if vcdr > 0.65 else "Normal",
-            
+            "mask_bytes": mask_bytes,  
             "metrics": {
                 "disc_pixel_area": int(np.sum(optic_disc_mask)),
                 "cup_pixel_area": int(np.sum(optic_cup_mask))
             }
         }
-
-    def _calculate_vcdr(self, disc_mask, cup_mask):
-        
-        disc_rows = np.any(disc_mask, axis=1)
-        cup_rows = np.any(cup_mask, axis=1)
-        
-        if not np.any(disc_rows) or not np.any(cup_rows):
-            return 0.0
-            
-        
-        disc_diameter = np.max(np.where(disc_rows)) - np.min(np.where(disc_rows)) + 1
-        cup_diameter = np.max(np.where(cup_rows)) - np.min(np.where(cup_rows)) + 1
-        
-        return cup_diameter / float(disc_diameter)
-
     def predict_progression(self, sequence_data):
         """
         Input matrix shape from frontend: [Timesteps, 5]
@@ -152,18 +160,18 @@ class MLInferenceService:
                 "total_visits_analyzed": timesteps
             }
         }
-    def _preprocess_image(self, image_bytes):
+    
         
-        pil_image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
-        
-        
-        image_np = np.array(pil_image)
+    
         
         
-        augmented = self.unet_transforms(image=image_np)
-        input_tensor = augmented['image'] 
+    
         
         
-        return input_tensor.unsqueeze(0).to(self.device)
+    
+    
+        
+        
+    
 
 ml_service = MLInferenceService()
