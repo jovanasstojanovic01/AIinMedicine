@@ -10,6 +10,7 @@ from PIL import Image
 import io
 import torchvision.transforms as T
 from flask import current_app
+import joblib
 
 class MLInferenceService:
     def __init__(self):
@@ -17,7 +18,7 @@ class MLInferenceService:
         self.unet = None
         self.gru = None
         self.xgb_model = None
-        self.scaler = StandardScaler()
+        self.scaler = joblib.load(current_app.config['SCALER_PATH'])
         
         
         self._load_models()

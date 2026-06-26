@@ -29,6 +29,10 @@ class Config:
         "XGB_MODEL", os.path.join(WEIGHTS_FOLDER, "xgboost_model.json")
     )
 
+    SCALER_PATH = os.getenv(
+        "SCALER_PATH", os.path.join(WEIGHTS_FOLDER, "scaler.pkl")
+    )
+
     VF_POINTS = 61
 
     EXTRA_FEATURES = 5
