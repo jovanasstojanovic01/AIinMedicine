@@ -44,26 +44,27 @@ class MLInferenceService:
         xgb_path = current_app.config['XGB_MODEL']
         if os.path.exists(xgb_path):
             self.xgb_model.load_model(xgb_path)
+    import torchvision.transforms as T
+
     def _preprocess_image(self, image_bytes, target_size=(current_app.config['CFP_IMAGE_SIZE'], current_app.config['CFP_IMAGE_SIZE'])):
-        
         image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
-        
         
         transform_pipeline = T.Compose([
             T.Resize(target_size),
             T.ToTensor(),  
-            
+            T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]) 
         ])
-        
         
         tensor = transform_pipeline(image).unsqueeze(0)
         return tensor.to(self.device)
+    
     def predict_glaucoma_segmentation(self, raw_image_bytes):
         input_tensor = self._preprocess_image(raw_image_bytes)
-        
+
         with torch.no_grad():
             logits = self.unet(input_tensor)
             probabilities = torch.sigmoid(logits)
+            
             masks = (probabilities > 0.5).int().squeeze(0).cpu().numpy()
 
         pred_disc = masks[0]
