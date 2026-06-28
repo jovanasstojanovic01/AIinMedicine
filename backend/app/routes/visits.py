@@ -1,4 +1,5 @@
 
+import json
 import os
 from flask import Blueprint, request,current_app
 from marshmallow import ValidationError
@@ -6,7 +7,7 @@ from app.extensions import db
 from app.models.db_models import Pacijent, Pregled, PregledMultimedija  
 from app.models.schemas import visit_schema, visits_schema          
 from app.ml.ml_service import ml_service
-from app.utils.media_helpers import generisi_jedinstveno_ime, get_mask_filename
+from app.utils.media_helpers import generisi_jedinstveno_ime, get_mask_filename, read_and_save_vf_xml
 from app.utils.responses import ok, created, error, not_found
 from datetime import datetime
 
@@ -128,7 +129,72 @@ def create_visit():
     except Exception as e:
         db.session.rollback()
         return error(f"Greška na serveru: {str(e)}", 500)
+    
 
+@bp.post("/<int:exam_id>/upload-perimetry")
+def upload_visit_perimetry(exam_id):
+    
+    pregled = Pregled.query.get(exam_id)
+    if not pregled:
+        return not_found(f"Pregled sa ID-jem {exam_id} nije pronađen.")
+
+    
+    file_od = request.files.get("file_OD")
+    file_os = request.files.get("file_OS")
+
+    
+    if not file_od and not file_os:
+        return error("Morate poslati barem jedan XML fajl ('file_OD' ili 'file_OS').", 400)
+
+    try:
+        azurirano_desno = False
+        azurirano_levo = False
+
+        
+        if file_od and file_od.filename != '':
+            
+            unikatno_ime_od, vf_niz_od = read_and_save_vf_xml(file_od)
+            
+            
+            pregled.od_vf_file = unikatno_ime_od
+            pregled.od_vf_matrix = json.dumps(vf_niz_od)  
+            azurirano_desno = True
+
+        
+        if file_os and file_os.filename != '':
+            
+            unikatno_ime_os, vf_niz_os = read_and_save_vf_xml(file_os)
+            
+            
+            pregled.os_vf_file = unikatno_ime_os
+            pregled.os_vf_matrix = json.dumps(vf_niz_os)
+            azurirano_levo = True
+
+        
+        db.session.commit()
+
+        
+        poruka = "Uspešno sačuvani podaci perimetrije za: "
+        oci = []
+        if azurirano_desno: oci.append("desno oko (OD)")
+        if azurirano_levo: oci.append("levo oko (OS)")
+        poruka += " i ".join(oci) + "."
+
+        
+        return ok({
+            "exam_id": exam_id,
+            "od_vf_file": pregled.od_vf_file,
+            "os_vf_file": pregled.os_vf_file
+        }, poruka)
+
+    except ValueError as ve:
+        
+        db.session.rollback()
+        return error(str(ve), 400)
+    except Exception as e:
+        
+        db.session.rollback()
+        return error(f"Greška tokom obrade XML fajla: {str(e)}", 500)
 @bp.post("/<int:exam_id>/upload-images")
 def upload_visit_images(exam_id):
     pregled = Pregled.query.get(exam_id)

@@ -18,6 +18,7 @@ def create_app(config_class=Config):
    
     os.makedirs(app.config['IMAGES_FOLDER'], exist_ok=True)
     os.makedirs(app.config['MASKS_FOLDER'], exist_ok=True)
+    os.makedirs(app.config['VF_FOLDER'], exist_ok=True)
     with app.app_context():
         from app.routes.patients import bp as patients_bp
         from app.routes.visits import bp as visits_bp

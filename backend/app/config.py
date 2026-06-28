@@ -15,6 +15,7 @@ class Config:
     UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'uploads')
     IMAGES_FOLDER = os.path.join(UPLOAD_FOLDER, 'images')
     MASKS_FOLDER = os.path.join(UPLOAD_FOLDER, 'masks')
+    VF_FOLDER = os.path.join(UPLOAD_FOLDER, 'visual_fields')
 
     WEIGHTS_FOLDER = os.path.join(BASE_DIR, 'ml', 'weights')
 
