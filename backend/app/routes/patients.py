@@ -110,6 +110,7 @@ def list_patients():
         "patients": serialized_patients,
         "total": pagination.total,
         "pages": pagination.pages,
+        "per_page": per_page,
         "page": page,
     })
 

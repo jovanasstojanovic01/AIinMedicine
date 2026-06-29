@@ -26,9 +26,9 @@ class Config:
     GRU_WEIGHTS = os.getenv(
         "GRU_WEIGHTS", os.path.join(WEIGHTS_FOLDER,"gru.pth")
     )
-    XGB_MODEL = os.getenv(
-        "XGB_MODEL", os.path.join(WEIGHTS_FOLDER, "xgboost_model.json")
-    )
+    # XGB_MODEL = os.getenv(
+    #     "XGB_MODEL", os.path.join(WEIGHTS_FOLDER, "xgboost_model.json")
+    # )
 
     SCALER_PATH = os.getenv(
         "SCALER_PATH", os.path.join(WEIGHTS_FOLDER, "scaler.pkl")

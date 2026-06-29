@@ -25,16 +25,7 @@ def get_mask_filename(original_filename):
     base_name, _ = os.path.splitext(original_filename)
     
     return f"{base_name}_mask.png"
-
-def read_and_save_vf_xml(xml_file):
-    if not xml_file or xml_file.filename == '':
-        return
-
-    unikatno_ime=generisi_jedinstveno_ime(xml_file.filename)
-    putanja_za_cuvanje = os.path.join(current_app.config['VF_FOLDER'], unikatno_ime)
-    xml_file.save(putanja_za_cuvanje)
-    xml_file.seek(0)  
-    xml_bytes=xml_file.read()
+def read_vf_xml(xml_bytes):
     root = ET.fromstring(xml_bytes)
 
 
@@ -45,5 +36,18 @@ def read_and_save_vf_xml(xml_file):
     
     if len(vf_niz) != 61:
         raise ValueError(f"Greška: Očekivan 61 parametar iz Octopus fajla, dobijeno {len(vf_niz)}.")
+
+    return vf_niz
+def read_and_save_vf_xml(xml_file):
+    if not xml_file or xml_file.filename == '':
+        return
+
+    unikatno_ime=generisi_jedinstveno_ime(xml_file.filename)
+    putanja_za_cuvanje = os.path.join(current_app.config['VF_FOLDER'], unikatno_ime)
+    xml_file.save(putanja_za_cuvanje)
+    xml_file.seek(0)  
+    xml_bytes=xml_file.read()
+
+    vf_niz = read_vf_xml(xml_bytes)
 
     return unikatno_ime, vf_niz
