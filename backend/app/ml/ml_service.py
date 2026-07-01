@@ -141,8 +141,8 @@ class MLInferenceService:
                     float(hcdr or 0.0),
                     float(acdr or 0.0),
                     float(rim_area or 0.0),
-                    float(vf_mean),
-                    float(interval_years)
+                    float(interval_years),
+                    float(vf_mean)
                 ])
 
             sirovi_niz = np.array(privremene_posete, dtype=np.float32)
