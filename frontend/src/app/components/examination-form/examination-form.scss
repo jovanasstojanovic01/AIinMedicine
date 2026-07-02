@@ -110,3 +110,8 @@
   .form-grid, .upload-grid { grid-template-columns: 1fr; }
   .form-header { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
+.section-title .required {
+  color: #e53935;
+  font-weight: 700;
+  margin-left: 2px;
+}

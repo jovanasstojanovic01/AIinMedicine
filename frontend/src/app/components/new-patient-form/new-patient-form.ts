@@ -86,6 +86,11 @@ export class NewPatientForm implements OnInit {
 
   sacuvaj(): void {
     if (this.form.invalid) return;
+    if (!this.vfODFile && !this.vfOSFile) {
+      this.statusMsg = 'Please upload at least one Visual Field XML file (OD or OS).';
+      this.statusType = 'error';
+      return;
+    }
     this.saving = true;
     this.statusMsg = '';
 

@@ -88,6 +88,21 @@
               <p>Diagnosis: <strong>{{ izabraniPregled.os_diagnosis || 'N/A' }} </strong></p>
               <p>IOP: <strong>{{ izabraniPregled.os_iop || 'N/A' }}</strong></p>  
             </div>
+            <div class="prediction-box">
+              <div class="pred-header">
+                <mat-icon>psychology</mat-icon>
+                <span>Next visit VF — AI prediction (OS)</span>
+                <button mat-icon-button (click)="runPrediction('OS')" [disabled]="predLoading === 'OS'">
+                  <mat-icon>refresh</mat-icon>
+                </button>
+              </div>
+              <mat-spinner *ngIf="predLoading === 'OS'" diameter="18"></mat-spinner>
+              <ng-container *ngIf="predLoading !== 'OS'">
+                <span *ngIf="predOS !== null" class="pred-value"
+                      [class.pred-warn]="predOS < 18">{{ predOS | number:'1.1-1' }} dB-eq</span>
+                <span *ngIf="predOS === null" class="pred-empty">Not calculated yet — press refresh</span>
+              </ng-container>
+            </div>
           </div>
 
           <div class="image-container">
@@ -108,6 +123,21 @@
             <div class="params-box">
               <p>Diagnosis: <strong>{{ izabraniPregled.od_diagnosis || 'N/A' }} </strong></p>
               <p>IOP: <strong>{{ izabraniPregled.od_iop || 'N/A' }}</strong></p>
+            </div>
+            <div class="prediction-box">
+              <div class="pred-header">
+                <mat-icon>psychology</mat-icon>
+                <span>Next visit VF — AI prediction (OD)</span>
+                <button mat-icon-button (click)="runPrediction('OD')" [disabled]="predLoading === 'OD'">
+                  <mat-icon>refresh</mat-icon>
+                </button>
+              </div>
+              <mat-spinner *ngIf="predLoading === 'OD'" diameter="18"></mat-spinner>
+              <ng-container *ngIf="predLoading !== 'OD'">
+                <span *ngIf="predOD !== null" class="pred-value"
+                      [class.pred-warn]="predOD < 18">{{ predOD | number:'1.1-1' }} dB-eq</span>
+                <span *ngIf="predOD === null" class="pred-empty">Not calculated yet — press refresh</span>
+              </ng-container>
             </div>
             
           </div>

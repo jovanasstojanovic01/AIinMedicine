@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule, MatSelectionList, MatSelectionListChange } from '@angular/material/list';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { PatientService } from '../../core/http/patient.service';
 import { VisitService } from '../../core/http/visit.service';
@@ -20,6 +21,7 @@ import { VisitService } from '../../core/http/visit.service';
     MatIconModule,
     MatListModule,
     MatTabsModule,
+    MatProgressSpinnerModule,
   ],
   templateUrl: './patient-detail.html',
   styleUrls: ['./patient-detail.scss'],
@@ -32,6 +34,10 @@ export class PatientDetail implements OnInit {
   pregledi: any[] = [];
   izabraniPregled: any = null;
   prikaziMasku: boolean = false;
+
+  predOD: number | null = null;
+  predOS: number | null = null;
+  predLoading: 'OD' | 'OS' | null = null;
 
   mediaUrl = 'http://127.0.0.1:5000/api/media';
 
@@ -74,6 +80,8 @@ export class PatientDetail implements OnInit {
 
         if (this.pregledi.length > 0) {
           this.izabraniPregled = this.pregledi[0];
+          this.predOD = this.pregledi[0]?.od_next_vf_mean_pred ?? null;
+          this.predOS = this.pregledi[0]?.os_next_vf_mean_pred ?? null;
           console.log(this.izabraniPregled);
         }
 
@@ -97,6 +105,8 @@ export class PatientDetail implements OnInit {
   onSelectionChange(event: MatSelectionListChange): void {
     if (event.options.length > 0) {
       this.izabraniPregled = event.options[0].value;
+      this.predOD = this.izabraniPregled?.od_next_vf_mean_pred ?? null;
+      this.predOS = this.izabraniPregled?.os_next_vf_mean_pred ?? null;
       console.log(this.izabraniPregled);
       this.cdr.detectChanges();
     }
@@ -107,10 +117,25 @@ export class PatientDetail implements OnInit {
     this.cdr.detectChanges();
   }
 
+  runPrediction(eye: 'OD' | 'OS'): void {
+    if (!this.izabraniPregled) return;
+    this.predLoading = eye;
+    this.cdr.detectChanges();
+    this.visitService.predictProgression(this.izabraniPregled.exam_id, eye).subscribe({
+      next: (res: any) => {
+        const val = res?.data?.predicted_next_visit_vf_mean ?? null;
+        if (eye === 'OD') this.predOD = val;
+        else this.predOS = val;
+        this.predLoading = null;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.predLoading = null; this.cdr.detectChanges(); },
+    });
+  }
+
   getMaskPath(multimedija:any | null):string{
     if(!multimedija) return "";
     if (!multimedija.image_path) return "";
     return this.mediaUrl + '/mask/' + multimedija.image_path!;
   }
 }
-

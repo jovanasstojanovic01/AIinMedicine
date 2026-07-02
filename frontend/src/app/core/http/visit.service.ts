@@ -38,4 +38,11 @@ export class VisitService {
     if (fileOS) formData.append('file_OS', fileOS, fileOS.name);
     return this.http.post<any>(`${this.baseUrl}/${examId}/upload-perimetry`, formData);
   }
+
+  // POST /api/visits/:id/predict-progression?eye=OD|OS
+  predictProgression(examId: number, eye: 'OD' | 'OS'): Observable<any> {
+    return this.http.post<any>(
+      `${this.baseUrl}/${examId}/predict-progression?eye=${eye}`, {}
+    );
+  }
 }

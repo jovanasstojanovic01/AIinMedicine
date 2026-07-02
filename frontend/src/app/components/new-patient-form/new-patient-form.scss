@@ -101,3 +101,8 @@
 @media (max-width: 600px) {
   .form-grid, .upload-grid { grid-template-columns: 1fr; }
 }
+.section-title .required {
+  color: #e53935;
+  font-weight: 700;
+  margin-left: 2px;
+}

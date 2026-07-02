@@ -92,6 +92,12 @@ export class ExaminationForm implements OnInit {
 
   sacuvaj(): void {
     if (this.pregledForm.invalid) return;
+    // VF XML je obavezan — bar jedno oko mora biti uploadovano
+    if (!this.vfODFile && !this.vfOSFile) {
+      this.statusMsg = 'Please upload at least one Visual Field XML file (OD or OS).';
+      this.statusType = 'error';
+      return;
+    }
     this.saving = true;
     this.statusMsg = '';
 
