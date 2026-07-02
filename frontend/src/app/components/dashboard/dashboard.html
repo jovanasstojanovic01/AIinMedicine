@@ -3,45 +3,40 @@
   <div class="main-content">
     <mat-card class="table-card">
       <div class="card-header">
-        <h2>Registar pacijenata klinike</h2>
+        <h2>Patient Registry</h2>
         
-        <!-- Pretraga šalje zahtev Flask-u na svaki pritisak tastera (ili klik na lupu) -->
         <mat-form-field appearance="outline" class="search-field">
-            <mat-label>Pretraži pacijenta (Ime ili prezime)</mat-label>
+            <mat-label>Search patient (First or last name)</mat-label>
             <input matInput 
                    #searchField 
                    [(ngModel)]="searchQuery" 
                    (keyup)="onSearch()"
-                   placeholder="Npr. Petronije">
+                   placeholder="e.g. John">
             <mat-icon matSuffix style="cursor: pointer;" (click)="onSearch()">search</mat-icon>
         </mat-form-field>
       </div>
 
       <table mat-table [dataSource]="patients" class="mat-elevation-z0">
         
-        <!-- Kolona: Ime i Prezime -->
         <ng-container matColumnDef="imePrezime">
-          <th mat-header-cell *matHeaderCellDef> Pacijent </th>
+          <th mat-header-cell *matHeaderCellDef> Patient </th>
           <td mat-cell *matCellDef="let element" class="patient-name"> 
             {{element.first_name}} {{element.last_name}} 
           </td>
         </ng-container>
 
-        <!-- Kolona: Datum rođenja -->
         <ng-container matColumnDef="birth_date">
-          <th mat-header-cell *matHeaderCellDef> Datum rođenja </th>
+          <th mat-header-cell *matHeaderCellDef> Date of Birth </th>
           <td mat-cell *matCellDef="let element"> {{element.birth_date | date:'dd.MM.yyyy.'}} </td>
         </ng-container>
 
-        <!-- Kolona: Pol -->
         <ng-container matColumnDef="gender">
-          <th mat-header-cell *matHeaderCellDef> Pol </th>
+          <th mat-header-cell *matHeaderCellDef> Gender </th>
           <td mat-cell *matCellDef="let element"> {{element.gender}} </td>
         </ng-container>
 
-        <!-- Kolona: CCT (Central Corneal Thickness) -->
         <ng-container matColumnDef="cct">
-          <th mat-header-cell *matHeaderCellDef> CCT (µm) </th>
+          <th mat-header-cell *matHeaderCellDef> CCT (Âµm) </th>
           <td mat-cell *matCellDef="let element"> 
             <span [style.font-weight]="element.cct < 550 ? 'bold' : 'normal'">
               {{element.cct}}
@@ -49,9 +44,8 @@
           </td>
         </ng-container>
 
-        <!-- Kolona: Kategorija Glaukoma -->
         <ng-container matColumnDef="glaucoma_category">
-          <th mat-header-cell *matHeaderCellDef> Dijagnoza </th>
+          <th mat-header-cell *matHeaderCellDef> Diagnosis </th>
           <td mat-cell *matCellDef="let element"> 
             <span class="badge" [ngClass]="element.glaucoma_category !== 'Negative' ? 'badge-danger' : 'badge-success'">
               {{element.glaucoma_category}}
@@ -59,15 +53,23 @@
           </td>
         </ng-container>
 
-        <!-- Kolona: Akcija (Link ka kartonu pacijenta) -->
         <ng-container matColumnDef="akcija">
-        <th mat-header-cell *matHeaderCellDef> Karton </th>
-        <td mat-cell *matCellDef="let element">
-          <button mat-icon-button color="primary" [routerLink]="['/patient', element.patient_id]" title="Otvori karton pacijenta">
-            <mat-icon>account_box</mat-icon>
-          </button>
-        </td>
-      </ng-container>
+          <th mat-header-cell *matHeaderCellDef> Actions </th>
+          <td mat-cell *matCellDef="let element">
+            <!-- Open patient record -->
+            <button mat-icon-button color="primary" 
+                    [routerLink]="['/patient', element.patient_id]" 
+                    title="Open patient record">
+              <mat-icon>account_box</mat-icon>
+            </button>
+            <!-- Start new exam for this patient -->
+            <button mat-icon-button color="accent" 
+                    [routerLink]="['/new-exam', element.patient_id]" 
+                    title="Start new examination">
+              <mat-icon>add_circle</mat-icon>
+            </button>
+          </td>
+        </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
@@ -77,18 +79,12 @@
 
   <div class="side-panel">
     <mat-card class="actions-card">
-      <h3>Brze Akcije</h3>
-      <p class="text-muted">Unesite novog pacijenta u sistem ili započnite pregled.</p>
+      <h3>Quick Actions</h3>
+      <p class="text-muted">Register a new patient and record their initial examination.</p>
       
-      <!-- Link vodi ka formi za kreiranje novog pacijenta (POST /patients) -->
       <button mat-raised-button color="primary" class="action-btn" routerLink="/new-patient">
         <mat-icon>person_add</mat-icon>
-        Registruj novog pacijenta
-      </button>
-
-      <button mat-stroked-button color="primary" class="action-btn" (click)="searchField.focus()">
-        <mat-icon>search</mat-icon>
-        Pronađi postojećeg pacijenta
+        Register new patient
       </button>
     </mat-card>
   </div>

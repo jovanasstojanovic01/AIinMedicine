@@ -1,25 +1,72 @@
 <div class="form-container">
   <mat-card class="form-card">
     <div class="form-header">
-      <h2>New Examination</h2>
-      <p class="patient-label" *ngIf="patientName">
-        <mat-icon>person</mat-icon> {{ patientName }}
-      </p>
+      <h2>Register New Patient</h2>
+      <p class="subtitle">Patient profile and initial examination will be created together.</p>
     </div>
 
-    <form [formGroup]="pregledForm" class="exam-form">
+    <form [formGroup]="form" class="patient-form">
 
-      <!-- IOP — obavezno -->
-      <h3 class="section-title">Intraocular Pressure (IOP)</h3>
+      <!-- Podaci o pacijentu -->
+      <h3 class="section-title">Patient Information</h3>
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>First Name</mat-label>
+          <input matInput formControlName="first_name" placeholder="e.g. John">
+          <mat-error *ngIf="form.get('first_name')?.hasError('required')">Required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Last Name</mat-label>
+          <input matInput formControlName="last_name" placeholder="e.g. Smith">
+          <mat-error *ngIf="form.get('last_name')?.hasError('required')">Required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Date of Birth</mat-label>
+          <input matInput type="date" formControlName="birth_date">
+          <mat-error *ngIf="form.get('birth_date')?.hasError('required')">Required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Gender</mat-label>
+          <mat-select formControlName="gender">
+            <mat-option value="M">Male</mat-option>
+            <mat-option value="F">Female</mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('gender')?.hasError('required')">Required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>CCT — Central Corneal Thickness (µm)</mat-label>
+          <input matInput type="number" formControlName="cct" placeholder="e.g. 545">
+          <mat-error *ngIf="form.get('cct')?.hasError('required')">Required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Glaucoma Category</mat-label>
+          <mat-select formControlName="glaucoma_category">
+            <mat-option value="None">None</mat-option>
+            <mat-option value="OAG">OAG — Open Angle Glaucoma</mat-option>
+            <mat-option value="ACG">ACG — Angle Closure Glaucoma</mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.get('glaucoma_category')?.hasError('required')">Required</mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- Inicijalni pregled -->
+      <h3 class="section-title">Initial Examination</h3>
       <div class="form-grid">
         <mat-form-field appearance="outline">
           <mat-label>IOP — Right Eye OD (mmHg)</mat-label>
           <input matInput type="number" formControlName="od_iop" placeholder="e.g. 16">
+          <mat-error *ngIf="form.get('od_iop')?.hasError('required')">Required</mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>IOP — Left Eye OS (mmHg)</mat-label>
           <input matInput type="number" formControlName="os_iop" placeholder="e.g. 18">
+          <mat-error *ngIf="form.get('os_iop')?.hasError('required')">Required</mat-error>
         </mat-form-field>
       </div>
 
@@ -85,7 +132,7 @@
                   placeholder="Prescribed therapy..."></textarea>
       </mat-form-field>
 
-      <!-- Status poruka -->
+      <!-- Status -->
       <div class="status-msg" *ngIf="statusMsg" [ngClass]="statusType">
         <mat-icon>{{ statusType === 'success' ? 'check_circle' : 'error' }}</mat-icon>
         {{ statusMsg }}
@@ -94,12 +141,12 @@
       <!-- Akcije -->
       <div class="form-actions">
         <button mat-button type="button" routerLink="/dashboard">Cancel</button>
-        <button mat-raised-button color="primary" 
+        <button mat-raised-button color="primary"
                 type="button"
-                [disabled]="pregledForm.invalid || saving"
+                [disabled]="form.invalid || saving"
                 (click)="sacuvaj()">
           <mat-icon>save</mat-icon>
-          {{ saving ? 'Saving...' : 'Save Examination' }}
+          {{ saving ? 'Saving...' : 'Register & Save Examination' }}
         </button>
       </div>
 

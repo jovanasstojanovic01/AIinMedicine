@@ -155,6 +155,19 @@
       object-fit: cover;
     }
 
+    .image-overlay-mask {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.85;
+      // screen: crni pikseli (0,0,0) postaju transparentni,
+      // obojeni pikseli maske (disk/cup) ostaju vidljivi preko slike
+      mix-blend-mode: screen;
+    }
+
     .image-overlay {
       position: absolute;
       top: 0;
