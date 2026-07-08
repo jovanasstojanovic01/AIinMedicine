@@ -1,5 +1,6 @@
 <div class="form-container">
   <mat-card class="form-card">
+
     <div class="form-header">
       <h2>New Examination</h2>
       <p class="patient-label" *ngIf="patientName">
@@ -7,102 +8,360 @@
       </p>
     </div>
 
-    <form [formGroup]="pregledForm" class="exam-form">
+    <mat-stepper #stepper orientation="horizontal">
 
-      <!-- IOP — obavezno -->
-      <h3 class="section-title">Intraocular Pressure (IOP)</h3>
-      <div class="form-grid">
-        <mat-form-field appearance="outline">
-          <mat-label>IOP — Right Eye OD (mmHg)</mat-label>
-          <input matInput type="number" formControlName="od_iop" placeholder="e.g. 16">
-        </mat-form-field>
+      <!-- ── KORAK 1: IOP ─────────────────────────────────────── -->
+      <mat-step label="IOP">
+        <div class="step-content">
+          <p class="step-desc">Enter intraocular pressure measurements for both eyes.</p>
+          <form [formGroup]="iopForm" class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>IOP — Right Eye OD (mmHg)</mat-label>
+              <input matInput type="number" formControlName="od_iop" placeholder="e.g. 16">
+              <mat-error>Required, must be ≥ 0</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>IOP — Left Eye OS (mmHg)</mat-label>
+              <input matInput type="number" formControlName="os_iop" placeholder="e.g. 18">
+              <mat-error>Required, must be ≥ 0</mat-error>
+            </mat-form-field>
+          </form>
+          <div class="error-msg" *ngIf="iopError">{{ iopError }}</div>
+          <div class="step-actions">
+            <button mat-button routerLink="/dashboard">Cancel</button>
+            <button mat-raised-button color="primary"
+                    [disabled]="iopForm.invalid || savingIop"
+                    (click)="submitIop()">
+              <mat-spinner *ngIf="savingIop" diameter="18"></mat-spinner>
+              <mat-icon *ngIf="!savingIop">arrow_forward</mat-icon>
+              {{ savingIop ? 'Saving...' : 'Save & Continue' }}
+            </button>
+          </div>
+        </div>
+      </mat-step>
 
-        <mat-form-field appearance="outline">
-          <mat-label>IOP — Left Eye OS (mmHg)</mat-label>
-          <input matInput type="number" formControlName="os_iop" placeholder="e.g. 18">
-        </mat-form-field>
-      </div>
+      <!-- ── KORAK 2: SLIKE (opciono) ──────────────────────────── -->
+      <mat-step label="Fundus Images">
+        <div class="step-content">
+          <p class="step-desc">
+            Upload fundus photographs if available.
+            <span class="optional-tag">Optional — you can skip this step.</span>
+          </p>
+          <div class="upload-grid">
+            <div class="upload-box">
+              <span class="upload-label">Right Eye (OD)</span>
+              <button type="button" mat-stroked-button (click)="fileOD.click()">
+                <mat-icon>cloud_upload</mat-icon> Choose image
+              </button>
+              <input type="file" #fileOD class="hidden-input" accept="image/*"
+                     (change)="onImageSelected($event, 'OD')">
+              <span class="file-name" *ngIf="imageODName">{{ imageODName }}</span>
+            </div>
+            <div class="upload-box">
+              <span class="upload-label">Left Eye (OS)</span>
+              <button type="button" mat-stroked-button (click)="fileOS.click()">
+                <mat-icon>cloud_upload</mat-icon> Choose image
+              </button>
+              <input type="file" #fileOS class="hidden-input" accept="image/*"
+                     (change)="onImageSelected($event, 'OS')">
+              <span class="file-name" *ngIf="imageOSName">{{ imageOSName }}</span>
+            </div>
+          </div>
+          <div class="error-msg" *ngIf="imagesError">{{ imagesError }}</div>
+          <div class="step-actions">
+            <button mat-button matStepperPrevious>
+              <mat-icon>chevron_left</mat-icon> Back
+            </button>
+            <button mat-stroked-button (click)="submitImages()" [disabled]="savingImages">
+              Skip
+            </button>
+            <button mat-raised-button color="primary"
+                    (click)="submitImages()"
+                    [disabled]="savingImages || (!imageODFile && !imageOSFile)">
+              <mat-spinner *ngIf="savingImages" diameter="18"></mat-spinner>
+              <mat-icon *ngIf="!savingImages">cloud_upload</mat-icon>
+              {{ savingImages ? 'Uploading...' : 'Upload & Continue' }}
+            </button>
+          </div>
+        </div>
+      </mat-step>
 
-      <!-- Fundus slike — opciono -->
-      <h3 class="section-title">Fundus Images <span class="optional">(optional)</span></h3>
-      <div class="upload-grid">
-        <div class="upload-box">
-          <span class="upload-label">Right Eye (OD)</span>
-          <button type="button" mat-stroked-button (click)="fileOD.click()">
-            <mat-icon>cloud_upload</mat-icon> Choose image
-          </button>
-          <input type="file" #fileOD class="hidden-input" accept="image/*"
-                 (change)="onImageSelected($event, 'OD')">
-          <span class="file-name" *ngIf="imageODName">{{ imageODName }}</span>
+      <!-- ── KORAK 3: VF XML ───────────────────────────────────── -->
+      <mat-step label="Visual Field">
+        <div class="step-content">
+          <p class="step-desc">
+            Upload the perimetry XML export from the visual field device.
+            <span class="required-tag">
+              Required for each eye that has a fundus image uploaded.
+              If no images were uploaded, at least one eye is required.
+            </span>
+          </p>
+          <div class="upload-grid">
+            <div class="upload-box">
+              <span class="upload-label">Right Eye (OD)</span>
+              <button type="button" mat-stroked-button (click)="vfOD.click()">
+                <mat-icon>upload_file</mat-icon> Choose XML
+              </button>
+              <input type="file" #vfOD class="hidden-input" accept=".xml"
+                     (change)="onVfSelected($event, 'OD')">
+              <span class="file-name" *ngIf="vfODName">{{ vfODName }}</span>
+            </div>
+            <div class="upload-box">
+              <span class="upload-label">Left Eye (OS)</span>
+              <button type="button" mat-stroked-button (click)="vfOS.click()">
+                <mat-icon>upload_file</mat-icon> Choose XML
+              </button>
+              <input type="file" #vfOS class="hidden-input" accept=".xml"
+                     (change)="onVfSelected($event, 'OS')">
+              <span class="file-name" *ngIf="vfOSName">{{ vfOSName }}</span>
+            </div>
+          </div>
+          <div class="error-msg" *ngIf="vfError">{{ vfError }}</div>
+          <div class="step-actions">
+            <button mat-button matStepperPrevious>
+              <mat-icon>chevron_left</mat-icon> Back
+            </button>
+            <button mat-raised-button color="primary"
+                    (click)="submitVf()"
+                    [disabled]="savingVf">
+              <mat-spinner *ngIf="savingVf" diameter="18"></mat-spinner>
+              <mat-icon *ngIf="!savingVf">upload_file</mat-icon>
+              {{ savingVf ? 'Uploading...' : 'Upload & Continue' }}
+            </button>
+          </div>
+        </div>
+      </mat-step>
+
+      <!-- ── KORAK 4: REVIEW & NOTES ───────────────────────────── -->
+      <mat-step label="Review & Notes">
+
+        <!-- Spinner dok se učitavaju podaci -->
+        <div class="loading-step" *ngIf="!examData">
+          <mat-spinner diameter="36"></mat-spinner>
+          <span>Loading examination data...</span>
         </div>
 
-        <div class="upload-box">
-          <span class="upload-label">Left Eye (OS)</span>
-          <button type="button" mat-stroked-button (click)="fileOS.click()">
-            <mat-icon>cloud_upload</mat-icon> Choose image
-          </button>
-          <input type="file" #fileOS class="hidden-input" accept="image/*"
-                 (change)="onImageSelected($event, 'OS')">
-          <span class="file-name" *ngIf="imageOSName">{{ imageOSName }}</span>
+        <div class="step-content" *ngIf="examData">
+
+          <!-- 1. SLIKE, MASKA I PARAMETRI ─────────────────────── -->
+          <div class="review-eyes">
+
+            <!-- OD -->
+            <div class="review-eye-col">
+              <h4 class="eye-title">Right Eye (OD)</h4>
+              <div class="img-wrapper" *ngIf="examData.od_multimedija?.image_path; else noImgOD">
+                <img [src]="mediaUrl + '/image/' + examData.od_multimedija.image_path" alt="OD fundus">
+                <img *ngIf="prikaziMasku"
+                     [src]="mediaUrl + '/mask/' + examData.od_multimedija.image_path"
+                     class="mask-overlay" alt="OD mask">
+              </div>
+              <ng-template #noImgOD>
+                <div class="no-img">
+                  <mat-icon>image_not_supported</mat-icon>
+                  <span>No image uploaded</span>
+                </div>
+              </ng-template>
+              <div class="eye-params">
+                <div class="param-row">
+                  <span>IOP</span>
+                  <strong>{{ examData.od_iop ?? 'N/A' }} mmHg</strong>
+                </div>
+                <div class="param-row">
+                  <span>Diagnosis</span>
+                  <strong>{{ examData.od_diagnosis ?? 'N/A' }}</strong>
+                </div>
+                <ng-container *ngIf="examData.od_multimedija">
+                  <div class="param-row" *ngIf="examData.od_multimedija.vcdr != null">
+                    <span>vCDR</span><strong>{{ examData.od_multimedija.vcdr | number:'1.3-3' }}</strong>
+                  </div>
+                  <div class="param-row" *ngIf="examData.od_multimedija.hcdr != null">
+                    <span>hCDR</span><strong>{{ examData.od_multimedija.hcdr | number:'1.3-3' }}</strong>
+                  </div>
+                  <div class="param-row" *ngIf="examData.od_multimedija.acdr != null">
+                    <span>aCDR</span><strong>{{ examData.od_multimedija.acdr | number:'1.3-3' }}</strong>
+                  </div>
+                  <div class="param-row" *ngIf="examData.od_multimedija.rim_area_pixels != null">
+                    <span>Rim Area</span><strong>{{ examData.od_multimedija.rim_area_pixels | number:'1.0-0' }} px</strong>
+                  </div>
+                </ng-container>
+              </div>
+            </div>
+
+            <!-- OS -->
+            <div class="review-eye-col">
+              <h4 class="eye-title">Left Eye (OS)</h4>
+              <div class="img-wrapper" *ngIf="examData.os_multimedija?.image_path; else noImgOS">
+                <img [src]="mediaUrl + '/image/' + examData.os_multimedija.image_path" alt="OS fundus">
+                <img *ngIf="prikaziMasku"
+                     [src]="mediaUrl + '/mask/' + examData.os_multimedija.image_path"
+                     class="mask-overlay" alt="OS mask">
+              </div>
+              <ng-template #noImgOS>
+                <div class="no-img">
+                  <mat-icon>image_not_supported</mat-icon>
+                  <span>No image uploaded</span>
+                </div>
+              </ng-template>
+              <div class="eye-params">
+                <div class="param-row">
+                  <span>IOP</span>
+                  <strong>{{ examData.os_iop ?? 'N/A' }} mmHg</strong>
+                </div>
+                <div class="param-row">
+                  <span>Diagnosis</span>
+                  <strong>{{ examData.os_diagnosis ?? 'N/A' }}</strong>
+                </div>
+                <ng-container *ngIf="examData.os_multimedija">
+                  <div class="param-row" *ngIf="examData.os_multimedija.vcdr != null">
+                    <span>vCDR</span><strong>{{ examData.os_multimedija.vcdr | number:'1.3-3' }}</strong>
+                  </div>
+                  <div class="param-row" *ngIf="examData.os_multimedija.hcdr != null">
+                    <span>hCDR</span><strong>{{ examData.os_multimedija.hcdr | number:'1.3-3' }}</strong>
+                  </div>
+                  <div class="param-row" *ngIf="examData.os_multimedija.acdr != null">
+                    <span>aCDR</span><strong>{{ examData.os_multimedija.acdr | number:'1.3-3' }}</strong>
+                  </div>
+                  <div class="param-row" *ngIf="examData.os_multimedija.rim_area_pixels != null">
+                    <span>Rim Area</span><strong>{{ examData.os_multimedija.rim_area_pixels | number:'1.0-0' }} px</strong>
+                  </div>
+                </ng-container>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Toggle maska -->
+          <div class="mask-toggle"
+               *ngIf="examData.od_multimedija?.image_path || examData.os_multimedija?.image_path">
+            <button mat-stroked-button (click)="prikaziMasku = !prikaziMasku">
+              <mat-icon>{{ prikaziMasku ? 'layers_clear' : 'layers' }}</mat-icon>
+              {{ prikaziMasku ? 'Hide segmentation mask' : 'Show segmentation mask' }}
+            </button>
+          </div>
+
+          <!-- 2. VF TABELA ──────────────────────────────────────── -->
+          <div class="vf-section" *ngIf="examData.od_vf_matrix || examData.os_vf_matrix">
+            <h4 class="section-label">Visual Field — Perimetry Results</h4>
+            <div class="vf-table-wrapper">
+              <table class="vf-table">
+                <thead>
+                  <tr>
+                    <th class="eye-col">Eye</th>
+                    <th *ngFor="let v of parseVf(examData.od_vf_matrix || examData.os_vf_matrix); let i = index"
+                        class="vf-cell-head">{{ i + 1 }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngIf="examData.od_vf_matrix">
+                    <td class="eye-col"><strong>OD</strong></td>
+                    <td *ngFor="let v of parseVf(examData.od_vf_matrix)"
+                        class="vf-cell"
+                        [class.blind]="v === -1"
+                        [class.low]="v !== -1 && v < 15"
+                        [class.mid]="v !== -1 && v >= 15 && v < 22"
+                        [class.high]="v !== -1 && v >= 22">
+                      {{ v === -1 ? '●' : v }}
+                    </td>
+                  </tr>
+                  <tr *ngIf="examData.os_vf_matrix">
+                    <td class="eye-col"><strong>OS</strong></td>
+                    <td *ngFor="let v of parseVf(examData.os_vf_matrix)"
+                        class="vf-cell"
+                        [class.blind]="v === -1"
+                        [class.low]="v !== -1 && v < 15"
+                        [class.mid]="v !== -1 && v >= 15 && v < 22"
+                        [class.high]="v !== -1 && v >= 22">
+                      {{ v === -1 ? '●' : v }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="vf-legend">
+              <span class="leg high">≥ 22 dB</span>
+              <span class="leg mid">15–21 dB</span>
+              <span class="leg low">&lt; 15 dB</span>
+              <span class="leg blind">● blind spot</span>
+            </div>
+          </div>
+
+          <!-- VF PROSEK za trenutni pregled -->
+          <div class="vf-means" *ngIf="examData.od_vf_matrix || examData.os_vf_matrix">
+            <div class="vf-mean-box" *ngIf="examData.od_vf_matrix">
+              <span class="vf-mean-label">OD — Current VF mean</span>
+              <span class="vf-mean-val">{{ vfMean(examData.od_vf_matrix) | number:'1.1-1' }} dB</span>
+            </div>
+            <div class="vf-mean-box" *ngIf="examData.os_vf_matrix">
+              <span class="vf-mean-label">OS — Current VF mean</span>
+              <span class="vf-mean-val">{{ vfMean(examData.os_vf_matrix) | number:'1.1-1' }} dB</span>
+            </div>
+          </div>
+
+          <!-- 3. AI PREDIKCIJA ──────────────────────────────────── -->
+          <div class="pred-card">
+            <div class="pred-title">
+              <mat-icon>psychology</mat-icon>
+              <strong>AI Prediction — Expected mean visual field at next visit</strong>
+            </div>
+            <div *ngIf="predLoading" class="pred-loading">
+              <mat-spinner diameter="22"></mat-spinner>
+              <span>Running GRU model...</span>
+            </div>
+            <div class="pred-eyes" *ngIf="!predLoading">
+              <div class="pred-eye" [class.pred-warn]="predOD !== null && predOD < 18">
+                <span class="pred-eye-label">OD — Right Eye</span>
+                <span class="pred-eye-val" *ngIf="predOD !== null">{{ predOD | number:'1.1-1' }} dB-eq</span>
+                <span class="pred-eye-val na" *ngIf="predOD === null">N/A</span>
+                <span class="pred-eye-hint" *ngIf="predOD !== null">
+                  {{ predOD < 18 ? 'Declining trend' : 'Stable trend' }}
+                </span>
+              </div>
+              <div class="pred-eye" [class.pred-warn]="predOS !== null && predOS < 18">
+                <span class="pred-eye-label">OS — Left Eye</span>
+                <span class="pred-eye-val" *ngIf="predOS !== null">{{ predOS | number:'1.1-1' }} dB-eq</span>
+                <span class="pred-eye-val na" *ngIf="predOS === null">N/A</span>
+                <span class="pred-eye-hint" *ngIf="predOS !== null">
+                  {{ predOS < 18 ? 'Declining trend' : 'Stable trend' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. KOMENTAR I TERAPIJA ───────────────────────────── -->
+          <form [formGroup]="notesForm" class="notes-form">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Doctor's comment *</mat-label>
+              <textarea matInput formControlName="physician_comment" rows="3"
+                        placeholder="Clinical findings, observations..."></textarea>
+              <mat-error>Required</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Therapy *</mat-label>
+              <textarea matInput formControlName="therapy" rows="2"
+                        placeholder="Prescribed therapy..."></textarea>
+              <mat-error>Required</mat-error>
+            </mat-form-field>
+          </form>
+
+          <div class="error-msg" *ngIf="notesError">{{ notesError }}</div>
+
+          <div class="step-actions">
+            <button mat-button matStepperPrevious>
+              <mat-icon>chevron_left</mat-icon> Back
+            </button>
+            <button mat-raised-button color="primary"
+                    (click)="submitNotes()"
+                    [disabled]="notesForm.invalid || savingNotes || predLoading">
+              <mat-spinner *ngIf="savingNotes" diameter="18"></mat-spinner>
+              <mat-icon *ngIf="!savingNotes">check</mat-icon>
+              {{ savingNotes ? 'Saving...' : 'Complete Examination' }}
+            </button>
+          </div>
+
         </div>
-      </div>
+      </mat-step>
 
-      <!-- VF XML — obavezno -->
-      <h3 class="section-title">Visual Field — Perimetry XML <span class="required">*</span></h3>
-      <div class="upload-grid">
-        <div class="upload-box">
-          <span class="upload-label">Right Eye (OD)</span>
-          <button type="button" mat-stroked-button (click)="vfOD.click()">
-            <mat-icon>upload_file</mat-icon> Choose XML
-          </button>
-          <input type="file" #vfOD class="hidden-input" accept=".xml"
-                 (change)="onVfSelected($event, 'OD')">
-          <span class="file-name" *ngIf="vfODName">{{ vfODName }}</span>
-        </div>
+    </mat-stepper>
 
-        <div class="upload-box">
-          <span class="upload-label">Left Eye (OS)</span>
-          <button type="button" mat-stroked-button (click)="vfOS.click()">
-            <mat-icon>upload_file</mat-icon> Choose XML
-          </button>
-          <input type="file" #vfOS class="hidden-input" accept=".xml"
-                 (change)="onVfSelected($event, 'OS')">
-          <span class="file-name" *ngIf="vfOSName">{{ vfOSName }}</span>
-        </div>
-      </div>
-
-      <!-- Komentar i terapija -->
-      <h3 class="section-title">Clinical Notes</h3>
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Doctor's comment</mat-label>
-        <textarea matInput formControlName="physician_comment" rows="3"
-                  placeholder="Clinical findings, observations..."></textarea>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Therapy</mat-label>
-        <textarea matInput formControlName="therapy" rows="2"
-                  placeholder="Prescribed therapy..."></textarea>
-      </mat-form-field>
-
-      <!-- Status poruka -->
-      <div class="status-msg" *ngIf="statusMsg" [ngClass]="statusType">
-        <mat-icon>{{ statusType === 'success' ? 'check_circle' : 'error' }}</mat-icon>
-        {{ statusMsg }}
-      </div>
-
-      <!-- Akcije -->
-      <div class="form-actions">
-        <button mat-button type="button" routerLink="/dashboard">Cancel</button>
-        <button mat-raised-button color="primary" 
-                type="button"
-                [disabled]="pregledForm.invalid || saving"
-                (click)="sacuvaj()">
-          <mat-icon>save</mat-icon>
-          {{ saving ? 'Saving...' : 'Save Examination' }}
-        </button>
-      </div>
-
-    </form>
   </mat-card>
 </div>

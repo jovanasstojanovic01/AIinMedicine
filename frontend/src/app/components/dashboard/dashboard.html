@@ -36,9 +36,9 @@
         </ng-container>
 
         <ng-container matColumnDef="cct">
-          <th mat-header-cell *matHeaderCellDef> CCT (Âµm) </th>
+          <th mat-header-cell *matHeaderCellDef> CCT (µm) </th>
           <td mat-cell *matCellDef="let element"> 
-            <span [style.font-weight]="element.cct < 550 ? 'bold' : 'normal'">
+            <span style='font-weight:normal'>
               {{element.cct}}
             </span>
           </td>

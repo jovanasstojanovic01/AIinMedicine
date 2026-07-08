@@ -42,7 +42,8 @@
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 12px 16px;
+  align-items: start;
 }
 
 .upload-grid {
@@ -105,4 +106,233 @@
   color: #e53935;
   font-weight: 700;
   margin-left: 2px;
+}
+// ── KORAK 5: REVIEW (identično examination-form) ───────────
+.loading-step {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 40px 0;
+  opacity: 0.6;
+  font-size: 14px;
+}
+
+.review-eyes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.review-eye-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .eye-title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.6;
+  }
+
+  .img-wrapper {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #000;
+    aspect-ratio: 1;
+
+    img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    .mask-overlay {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      mix-blend-mode: screen;
+      opacity: 0.85;
+    }
+  }
+
+  .no-img {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    border: 1px dashed rgba(128,128,128,0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    opacity: 0.35;
+    font-size: 13px;
+  }
+
+  .eye-params {
+    .param-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(128,128,128,0.1);
+      span { opacity: 0.6; }
+      strong { font-weight: 600; }
+    }
+  }
+}
+
+.mask-toggle { margin-bottom: 24px; }
+
+.vf-section {
+  margin-bottom: 24px;
+  .section-label {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.6;
+    margin: 0 0 12px;
+  }
+}
+
+.vf-table-wrapper {
+  overflow-x: auto;
+  border-radius: 6px;
+  border: 1px solid rgba(128,128,128,0.15);
+}
+
+.vf-table {
+  border-collapse: collapse;
+  font-size: 11px;
+  min-width: 100%;
+
+  th, td { padding: 4px 5px; text-align: center; border: 1px solid rgba(128,128,128,0.1); min-width: 28px; }
+  .vf-cell-head { font-weight: 500; opacity: 0.5; background: rgba(128,128,128,0.05); }
+  .eye-col { font-size: 12px; min-width: 36px; background: rgba(128,128,128,0.05); }
+  .vf-cell {
+    &.blind { color: rgba(128,128,128,0.4); }
+    &.low   { background: rgba(230,81,0,0.12);  color: #bf360c; font-weight: 600; }
+    &.mid   { background: rgba(255,193,7,0.12); color: #795548; }
+    &.high  { background: rgba(56,142,60,0.08); color: #2e7d32; }
+  }
+}
+
+.vf-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 11px;
+  .leg {
+    padding: 2px 8px;
+    border-radius: 4px;
+    &.high  { background: rgba(56,142,60,0.08);  color: #2e7d32; }
+    &.mid   { background: rgba(255,193,7,0.12);  color: #795548; }
+    &.low   { background: rgba(230,81,0,0.12);   color: #bf360c; }
+    &.blind { color: rgba(128,128,128,0.5); }
+  }
+}
+
+.vf-means {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 20px;
+
+  .vf-mean-box {
+    padding: 12px 16px;
+    border-radius: 6px;
+    border: 1px solid rgba(128,128,128,0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    .vf-mean-label { font-size: 13px; opacity: 0.6; }
+    .vf-mean-val   { font-size: 18px; font-weight: 700; }
+  }
+}
+
+.pred-card {
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(128,128,128,0.2);
+  background: rgba(128,128,128,0.03);
+  margin-bottom: 24px;
+
+  .pred-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    font-size: 14px;
+    mat-icon { opacity: 0.65; font-size: 18px; height: 18px; width: 18px; }
+  }
+
+  .pred-loading { display: flex; align-items: center; gap: 10px; font-size: 13px; opacity: 0.6; }
+
+  .pred-eyes { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  .pred-eye {
+    padding: 12px;
+    border-radius: 6px;
+    background: rgba(56,142,60,0.07);
+    border-left: 3px solid #388e3c;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+    &.pred-warn {
+      background: rgba(230,81,0,0.07);
+      border-left-color: #e65100;
+      .pred-eye-val { color: #e65100; }
+      .pred-eye-hint { color: #e65100; }
+    }
+
+    .pred-eye-label { font-size: 11px; opacity: 0.55; text-transform: uppercase; letter-spacing: 0.4px; }
+    .pred-eye-val   { font-size: 22px; font-weight: 700; color: #388e3c; &.na { font-size: 14px; opacity: 0.35; color: inherit; } }
+    .pred-eye-hint  { font-size: 12px; color: #388e3c; }
+  }
+}
+
+.notes-form { display: flex; flex-direction: column; gap: 8px; }
+
+.radio-form-field {
+  // Sakrij pravi input koji samo drži mat-form-field živ
+  .hidden-input {
+    display: none;
+  }
+
+  // Radio dugmad unutar mat-form-field — pozicionirana
+  // da izgledaju kao sadržaj input polja
+  .radio-inside {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 0;
+  }
+
+  // Povećaj visinu mat-form-field da stane radio grupa
+  .mat-mdc-form-field-infix {
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    padding-top: 18px !important;
+    padding-bottom: 6px !important;
+  }
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.radio-inline {
+  flex-direction: row;
+  gap: 20px;
+}
+
+@media (max-width: 600px) {
+  .review-eyes, .vf-means, .pred-eyes { grid-template-columns: 1fr; }
 }

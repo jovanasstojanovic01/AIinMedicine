@@ -39,6 +39,11 @@ export class VisitService {
     return this.http.post<any>(`${this.baseUrl}/${examId}/upload-perimetry`, formData);
   }
 
+  // PUT /api/visits/:id — ažurira komentar i terapiju
+  updateExam(examId: number, body: any): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/${examId}`, body);
+  }
+
   // POST /api/visits/:id/predict-progression?eye=OD|OS
   predictProgression(examId: number, eye: 'OD' | 'OS'): Observable<any> {
     return this.http.post<any>(

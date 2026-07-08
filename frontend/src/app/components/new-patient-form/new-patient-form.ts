@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -8,6 +8,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatSelectModule } from '@angular/material/select';
+import { MatRadioModule } from '@angular/material/radio';
+import { MatStepperModule, MatStepper } from '@angular/material/stepper';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { PatientService } from '../../core/http/patient.service';
 import { VisitService } from '../../core/http/visit.service';
@@ -25,26 +28,55 @@ import { VisitService } from '../../core/http/visit.service';
     MatIconModule,
     MatCardModule,
     MatSelectModule,
+    MatRadioModule,
+    MatStepperModule,
+    MatProgressSpinnerModule,
   ],
   templateUrl: './new-patient-form.html',
   styleUrls: ['./new-patient-form.scss'],
 })
 export class NewPatientForm implements OnInit {
-  form!: FormGroup;
 
+  @ViewChild('stepper') stepper!: MatStepper;
+
+  // Korak 1 — Podaci o pacijentu (bez CCT i glaucoma category)
+  patientForm!: FormGroup;
+  savingPatient = false;
+  patientError = '';
+  patientId: number | null = null;
+
+  // Korak 2 — IOP
+  iopForm!: FormGroup;
+  savingIop = false;
+  iopError = '';
+  examId: number | null = null;
+
+  // Korak 3 — Slike (opciono)
   imageODFile: File | null = null;
   imageODName = '';
   imageOSFile: File | null = null;
   imageOSName = '';
+  savingImages = false;
+  imagesError = '';
 
+  // Korak 4 — VF XML
   vfODFile: File | null = null;
   vfODName = '';
   vfOSFile: File | null = null;
   vfOSName = '';
+  savingVf = false;
+  vfError = '';
 
-  saving = false;
-  statusMsg = '';
-  statusType: 'success' | 'error' = 'success';
+  // Korak 5 — Review + CCT + komentar + glaucoma category + terapija
+  reviewForm!: FormGroup;
+  savingReview = false;
+  reviewError = '';
+  examData: any = null;
+  prikaziMasku = false;
+  predOD: number | null = null;
+  predOS: number | null = null;
+  predLoading = false;
+  mediaUrl = 'http://127.0.0.1:5000/api/media';
 
   constructor(
     private fb: FormBuilder,
@@ -54,22 +86,68 @@ export class NewPatientForm implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.form = this.fb.group({
-      // Podaci o pacijentu
-      first_name:        ['', Validators.required],
-      last_name:         ['', Validators.required],
-      birth_date:        ['', Validators.required],
-      gender:            ['', Validators.required],
-      cct:               ['', Validators.required],
+    this.patientForm = this.fb.group({
+      first_name: ['', Validators.required],
+      last_name:  ['', Validators.required],
+      birth_date: ['', Validators.required],
+      gender:     ['', Validators.required],
+    });
+
+    this.iopForm = this.fb.group({
+      od_iop: ['', [Validators.required, Validators.min(0)]],
+      os_iop: ['', [Validators.required, Validators.min(0)]],
+    });
+
+    this.reviewForm = this.fb.group({
+      cct:               ['', [Validators.required, Validators.min(0)]],
+      physician_comment: ['', Validators.required],
       glaucoma_category: ['None', Validators.required],
-      // Inicijalni pregled
-      od_iop:            ['', [Validators.required, Validators.min(0)]],
-      os_iop:            ['', [Validators.required, Validators.min(0)]],
-      physician_comment: [''],
-      therapy:           [''],
+      therapy:           ['', Validators.required],
     });
   }
 
+  // ── KORAK 1: PACIJENT ───────────────────────────────────────────────
+  submitPatient(): void {
+    if (this.patientForm.invalid) return;
+    this.savingPatient = true;
+    this.patientError = '';
+
+    this.patientService.createPatient(this.patientForm.value).subscribe({
+      next: (res: any) => {
+        this.patientId = res?.data?.patient_id ?? res?.patient_id;
+        this.savingPatient = false;
+        this.stepper.next();
+      },
+      error: () => {
+        this.savingPatient = false;
+        this.patientError = 'Failed to register patient. Please try again.';
+      },
+    });
+  }
+
+  // ── KORAK 2: IOP ────────────────────────────────────────────────────
+  submitIop(): void {
+    if (this.iopForm.invalid) return;
+    this.savingIop = true;
+    this.iopError = '';
+
+    this.visitService.createNewExam(this.patientId!, {
+      od_iop: this.iopForm.value.od_iop,
+      os_iop: this.iopForm.value.os_iop,
+    }).subscribe({
+      next: (res: any) => {
+        this.examId = res?.data?.exam_id ?? res?.exam_id;
+        this.savingIop = false;
+        this.stepper.next();
+      },
+      error: () => {
+        this.savingIop = false;
+        this.iopError = 'Failed to save examination. Please try again.';
+      },
+    });
+  }
+
+  // ── KORAK 3: SLIKE ──────────────────────────────────────────────────
   onImageSelected(event: any, eye: 'OD' | 'OS'): void {
     const file: File = event.target.files[0];
     if (!file) return;
@@ -77,97 +155,137 @@ export class NewPatientForm implements OnInit {
     else              { this.imageOSFile = file; this.imageOSName = file.name; }
   }
 
+  submitImages(): void {
+    if (!this.imageODFile && !this.imageOSFile) {
+      this.stepper.next();
+      return;
+    }
+    this.savingImages = true;
+    this.imagesError = '';
+    this.visitService.uploadImages(this.examId!, this.imageODFile, this.imageOSFile).subscribe({
+      next: () => { this.savingImages = false; this.stepper.next(); },
+      error: () => {
+        this.savingImages = false;
+        this.imagesError = 'Image upload failed. You can skip and retry later from the patient record.';
+      },
+    });
+  }
+
+  // ── KORAK 4: VF XML ─────────────────────────────────────────────────
   onVfSelected(event: any, eye: 'OD' | 'OS'): void {
     const file: File = event.target.files[0];
     if (!file) return;
     if (eye === 'OD') { this.vfODFile = file; this.vfODName = file.name; }
     else              { this.vfOSFile = file; this.vfOSName = file.name; }
+    this.vfError = '';
   }
 
-  sacuvaj(): void {
-    if (this.form.invalid) return;
-    if (!this.vfODFile && !this.vfOSFile) {
-      this.statusMsg = 'Please upload at least one Visual Field XML file (OD or OS).';
-      this.statusType = 'error';
+  submitVf(): void {
+    const needOD = !!this.imageODFile;
+    const needOS = !!this.imageOSFile;
+    const neitherImage = !needOD && !needOS;
+
+    if (needOD && !this.vfODFile) {
+      this.vfError = 'You uploaded a fundus image for OD — VF XML for OD is required.';
       return;
     }
-    this.saving = true;
-    this.statusMsg = '';
+    if (needOS && !this.vfOSFile) {
+      this.vfError = 'You uploaded a fundus image for OS — VF XML for OS is required.';
+      return;
+    }
+    if (neitherImage && !this.vfODFile && !this.vfOSFile) {
+      this.vfError = 'Please upload at least one Visual Field XML file (OD or OS).';
+      return;
+    }
 
-    const v = this.form.value;
-
-    // Korak 1: kreiraj pacijenta
-    const patientBody = {
-      first_name:        v.first_name,
-      last_name:         v.last_name,
-      birth_date:        v.birth_date,
-      gender:            v.gender,
-      cct:               v.cct,
-      glaucoma_category: v.glaucoma_category,
-    };
-
-    this.patientService.createPatient(patientBody as any).subscribe({
-      next: (res: any) => {
-        const patientId: number = res?.data?.patient_id ?? res?.patient_id;
-
-        // Korak 2: kreiraj inicijalni pregled za tog pacijenta
-        const examBody = {
-          patient_id:        patientId,
-          od_iop:            v.od_iop,
-          os_iop:            v.os_iop,
-          physician_comment: v.physician_comment,
-          therapy:           v.therapy,
-        };
-
-        this.visitService.createNewExam(patientId, examBody).subscribe({
-          next: (examRes: any) => {
-            const examId: number = examRes?.data?.exam_id ?? examRes?.exam_id;
-            const uploads: Promise<void>[] = [];
-
-            if (this.imageODFile || this.imageOSFile) {
-              uploads.push(
-                new Promise((resolve, reject) =>
-                  this.visitService
-                    .uploadImages(examId, this.imageODFile, this.imageOSFile)
-                    .subscribe({ next: () => resolve(), error: reject })
-                )
-              );
-            }
-
-            if (this.vfODFile || this.vfOSFile) {
-              uploads.push(
-                new Promise((resolve, reject) =>
-                  this.visitService
-                    .uploadVfXml(examId, this.vfODFile, this.vfOSFile)
-                    .subscribe({ next: () => resolve(), error: reject })
-                )
-              );
-            }
-
-            Promise.all(uploads)
-              .then(() => {
-                this.saving = false;
-                this.router.navigate(['/patient', patientId]);
-              })
-              .catch(() => {
-                this.saving = false;
-                this.statusMsg = 'Patient and examination saved, but file upload failed. You can retry from the patient record.';
-                this.statusType = 'error';
-                setTimeout(() => this.router.navigate(['/patient', patientId]), 3000);
-              });
-          },
-          error: () => {
-            this.saving = false;
-            this.statusMsg = 'Patient created but examination failed to save. Please try again from the patient record.';
-            this.statusType = 'error';
-          },
-        });
+    this.savingVf = true;
+    this.vfError = '';
+    this.visitService.uploadVfXml(this.examId!, this.vfODFile, this.vfOSFile).subscribe({
+      next: () => {
+        this.savingVf = false;
+        this.loadExamAndPredict();
       },
       error: () => {
-        this.saving = false;
-        this.statusMsg = 'Failed to register patient. Please try again.';
-        this.statusType = 'error';
+        this.savingVf = false;
+        this.vfError = 'VF upload failed. Please try again.';
       },
     });
+  }
+
+  private loadExamAndPredict(): void {
+    this.predLoading = true;
+
+    this.visitService.getExam(this.examId!).subscribe({
+      next: (res: any) => { this.examData = res?.data ?? res; },
+    });
+
+    Promise.all([
+      new Promise<void>((resolve) =>
+        this.visitService.predictProgression(this.examId!, 'OD').subscribe({
+          next: (r: any) => { this.predOD = r?.data?.predicted_next_visit_vf_mean ?? null; resolve(); },
+          error: () => resolve(),
+        })
+      ),
+      new Promise<void>((resolve) =>
+        this.visitService.predictProgression(this.examId!, 'OS').subscribe({
+          next: (r: any) => { this.predOS = r?.data?.predicted_next_visit_vf_mean ?? null; resolve(); },
+          error: () => resolve(),
+        })
+      ),
+    ]).then(() => {
+      this.predLoading = false;
+      this.stepper.next();
+    });
+  }
+
+  // ── KORAK 5: REVIEW + CCT + KOMENTAR + GLAUCOMA + TERAPIJA ─────────
+  submitReview(): void {
+    if (this.reviewForm.invalid) return;
+    this.savingReview = true;
+    this.reviewError = '';
+
+    const v = this.reviewForm.value;
+
+    // Paralelno: update pregleda (komentar + terapija) i update pacijenta (CCT + glaucoma_category)
+    Promise.all([
+      new Promise<void>((resolve, reject) =>
+        this.visitService.updateExam(this.examId!, {
+          physician_comment: v.physician_comment,
+          therapy: v.therapy,
+        }).subscribe({ next: () => resolve(), error: reject })
+      ),
+      new Promise<void>((resolve, reject) =>
+        this.patientService.updatePatient(this.patientId!, {
+          cct: v.cct,
+          glaucoma_category: v.glaucoma_category,
+        }).subscribe({ next: () => resolve(), error: reject })
+      ),
+    ]).then(() => {
+      this.savingReview = false;
+      this.router.navigate(['/patient', this.patientId]);
+    }).catch(() => {
+      this.savingReview = false;
+      this.reviewError = 'Failed to save. Please try again.';
+    });
+  }
+
+  parseVf(matrix: string | null): number[] {
+    if (!matrix) return [];
+    try {
+      const parsed = JSON.parse(matrix);
+      if (Array.isArray(parsed)) {
+        return parsed.map(v => (v === null || v === -1) ? -1 : Number(v));
+      }
+    } catch {}
+    return matrix.split(',').map(v => {
+      const t = v.trim();
+      return (t === '' || t === '-1' || t === 'null') ? -1 : parseFloat(t);
+    });
+  }
+
+  vfMean(matrix: string | null): number {
+    const vals = this.parseVf(matrix).filter(v => v !== -1);
+    if (vals.length === 0) return 0;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
   }
 }

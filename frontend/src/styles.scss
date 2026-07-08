@@ -55,3 +55,10 @@ body.dark-theme {
   background-color: #121414 !important; 
   color: var(--mat-sys-on-surface) !important;
 }
+// Fix za mat-select overlay koji se meša sa ostalim elementima.
+// panelClass mora biti u globalnom styles jer Angular Material
+// renderuje overlay portal VAN component DOM-a, pa component-scoped
+// SCSS ne može da ga dosegne.
+.select-panel-above {
+  z-index: 9999 !important;
+}
