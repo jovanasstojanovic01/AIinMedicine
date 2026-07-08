@@ -13,8 +13,8 @@ class Pacijent(db.Model):
     last_name         = db.Column(db.String(100), nullable=False)
     gender            = db.Column(db.Enum("M", "F"), nullable=False)
     birth_date        = db.Column(db.Date, nullable=False)
-    cct               = db.Column(db.Float, nullable=False)
-    glaucoma_category = db.Column(db.Enum("None", "ACG", "OAG", name="glaucoma_categories"), nullable=False)
+    cct               = db.Column(db.Float)
+    glaucoma_category = db.Column(db.Enum("None", "ACG", "OAG", name="glaucoma_categories"))
 
     
     pregledi = db.relationship("Pregled", back_populates="pacijent", cascade="all, delete-orphan")
