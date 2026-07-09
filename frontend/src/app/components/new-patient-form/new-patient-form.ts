@@ -39,19 +39,16 @@ export class NewPatientForm implements OnInit {
 
   @ViewChild('stepper') stepper!: MatStepper;
 
-  // Korak 1 — Podaci o pacijentu (bez CCT i glaucoma category)
   patientForm!: FormGroup;
   savingPatient = false;
   patientError = '';
   patientId: number | null = null;
 
-  // Korak 2 — IOP
   iopForm!: FormGroup;
   savingIop = false;
   iopError = '';
   examId: number | null = null;
 
-  // Korak 3 — Slike (opciono)
   imageODFile: File | null = null;
   imageODName = '';
   imageOSFile: File | null = null;
@@ -59,7 +56,6 @@ export class NewPatientForm implements OnInit {
   savingImages = false;
   imagesError = '';
 
-  // Korak 4 — VF XML
   vfODFile: File | null = null;
   vfODName = '';
   vfOSFile: File | null = null;
@@ -67,7 +63,6 @@ export class NewPatientForm implements OnInit {
   savingVf = false;
   vfError = '';
 
-  // Korak 5 — Review + CCT + komentar + glaucoma category + terapija
   reviewForm!: FormGroup;
   savingReview = false;
   reviewError = '';
@@ -106,7 +101,6 @@ export class NewPatientForm implements OnInit {
     });
   }
 
-  // ── KORAK 1: PACIJENT ───────────────────────────────────────────────
   submitPatient(): void {
     if (this.patientForm.invalid) return;
     this.savingPatient = true;
@@ -125,7 +119,6 @@ export class NewPatientForm implements OnInit {
     });
   }
 
-  // ── KORAK 2: IOP ────────────────────────────────────────────────────
   submitIop(): void {
     if (this.iopForm.invalid) return;
     this.savingIop = true;
@@ -147,7 +140,6 @@ export class NewPatientForm implements OnInit {
     });
   }
 
-  // ── KORAK 3: SLIKE ──────────────────────────────────────────────────
   onImageSelected(event: any, eye: 'OD' | 'OS'): void {
     const file: File = event.target.files[0];
     if (!file) return;
@@ -171,7 +163,6 @@ export class NewPatientForm implements OnInit {
     });
   }
 
-  // ── KORAK 4: VF XML ─────────────────────────────────────────────────
   onVfSelected(event: any, eye: 'OD' | 'OS'): void {
     const file: File = event.target.files[0];
     if (!file) return;
@@ -238,7 +229,6 @@ export class NewPatientForm implements OnInit {
     });
   }
 
-  // ── KORAK 5: REVIEW + CCT + KOMENTAR + GLAUCOMA + TERAPIJA ─────────
   submitReview(): void {
     if (this.reviewForm.invalid) return;
     this.savingReview = true;
@@ -246,7 +236,6 @@ export class NewPatientForm implements OnInit {
 
     const v = this.reviewForm.value;
 
-    // Paralelno: update pregleda (komentar + terapija) i update pacijenta (CCT + glaucoma_category)
     Promise.all([
       new Promise<void>((resolve, reject) =>
         this.visitService.updateExam(this.examId!, {

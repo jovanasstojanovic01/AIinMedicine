@@ -22,7 +22,6 @@ export class Navbar implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Ako smo u browseru, samo proveravamo da li je index.html već uspešno upalio tamnu temu
     if (typeof window !== 'undefined') {
       this.isDarkTheme = this.document.body.classList.contains('dark-theme');
     }

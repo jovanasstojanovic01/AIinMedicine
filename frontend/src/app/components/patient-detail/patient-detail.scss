@@ -31,55 +31,43 @@
   h3 { margin-bottom: 12px; font-weight: 500; }
 }
 
-// Popravka i stilizacija Angular Material liste
 .timeline-item {
-  margin-bottom: 16px; // Razmak između kartica
+  margin-bottom: 16px; 
   cursor: pointer;
   transition: transform 0.2s ease-in-out, background-color 0.2s ease;
-  border-left: 4px solid transparent; // Rezervišemo prostor za liniju sa strane da UI ne "skače"
+  border-left: 4px solid transparent; 
   
-  // Geometrija i definisanje prostora
   min-height: 85px !important; 
   height: auto !important;
 
-  // 1. Prostor za ikonicu (Levo)
   ::v-deep .mdc-list-item__start {
-    margin-left: 16px !important;  // Uvlačenje od leve ivice kartice
-    margin-right: 20px !important; // Razmak od ikonice do teksta
-    align-self: center;            // Vertikalno centriranje
+    margin-left: 16px !important;  
+    margin-right: 20px !important; 
+    align-self: center;          
   }
 
-  // 2. Ključni padding za tekst (Sredina)
   ::v-deep .mdc-list-item__content {
-    padding: 16px 0 !important;    // Vertikalni prostor (gore/dole) da tekst "prodiše"
+    padding: 16px 0 !important;   
     display: flex;
     flex-direction: column;
-    gap: 6px !important;           // Čist razmak između naslova i datuma
+    gap: 6px !important;          
     justify-content: center;
   }
 
-  // 3. Prostor za radio dugme / pseudo-checkbox (Desno)
   ::v-deep .mdc-list-item__end {
     margin-left: auto !important;
-    padding-right: 20px !important; // Uvlačenje od desne ivice kartice
+    padding-right: 20px !important; 
     align-self: center;
   }
 
-  // Efekat podizanja na hover
   &:hover {
     transform: translateY(-2px);
   }
 
-  // ==========================================================================
-  // KLJUČNA IZMENA: Pravo rešenje za promenu UI-ja kada je radio button aktivan
-  // ==========================================================================
-  
-  // Kada Angular Material doda klasu za selektovano stanje na mat-list-option
   &.mat-mdc-list-option-selected, &.mat-selected {
-    background-color: rgba(63, 81, 181, 0.12) !important; /* Blaga plava pozadina za aktivni red */
-    border-left: 5px solid #3f51b5 !important;            /* Izražena primarna linija sa leve strane */
+    background-color: rgba(63, 81, 181, 0.12) !important;
+    border-left: 5px solid #3f51b5 !important;        
 
-    // Prisilio menjamo boju unutrašnjeg Material pseudo-kružića u aktivnu primarnu boju
     ::v-deep .mat-pseudo-checkbox-checked,
     ::v-deep .mat-mdc-pseudo-checkbox-checked,
     ::v-deep .mdc-checkbox__native-control:checked ~ .mdc-checkbox__background {
@@ -87,14 +75,12 @@
       border-color: #3f51b5 !important;
     }
     
-    // Ako se koristi ugrađena ikonica kvačice unutar kružića, bojimo je u belo
     ::v-deep .mat-pseudo-checkbox-minimal.mat-pseudo-checkbox-checked::after {
       color: #fff !important;
     }
   }
 }
 
-// Tekstualni stilovi bez fiksnih boja
 .timeline-title {
   font-size: 15px;
   font-weight: 500;
@@ -128,7 +114,6 @@
   h3 { margin: 0; font-weight: 500; }
 }
 
-// Stilovi za Side-by-side slike i masku preko slike
 .eye-images-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -143,7 +128,6 @@
   .wrapper {
     position: relative;
     width: 100%;
-    // aspect-ratio: 4/3;
     border-radius: 8px;
     overflow: hidden;
     background-color: #000;
@@ -163,8 +147,6 @@
       height: 100%;
       object-fit: cover;
       opacity: 0.85;
-      // screen: crni pikseli (0,0,0) postaju transparentni,
-      // obojeni pikseli maske (disk/cup) ostaju vidljivi preko slike
       mix-blend-mode: screen;
     }
 

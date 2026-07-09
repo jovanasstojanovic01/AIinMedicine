@@ -107,7 +107,6 @@
   font-weight: 700;
   margin-left: 2px;
 }
-// ── KORAK 5: REVIEW (identično examination-form) ───────────
 .loading-step {
   display: flex;
   align-items: center;
@@ -308,13 +307,10 @@
 .notes-form { display: flex; flex-direction: column; gap: 8px; }
 
 .radio-form-field {
-  // Sakrij pravi input koji samo drži mat-form-field živ
   .hidden-input {
     display: none;
   }
 
-  // Radio dugmad unutar mat-form-field — pozicionirana
-  // da izgledaju kao sadržaj input polja
   .radio-inside {
     position: absolute;
     top: 50%;
@@ -322,7 +318,6 @@
     left: 0;
   }
 
-  // Povećaj visinu mat-form-field da stane radio grupa
   .mat-mdc-form-field-infix {
     min-height: 56px;
     display: flex;

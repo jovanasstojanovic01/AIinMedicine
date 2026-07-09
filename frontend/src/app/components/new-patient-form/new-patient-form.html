@@ -7,7 +7,6 @@
 
     <mat-stepper #stepper orientation="horizontal">
 
-      <!-- ── KORAK 1: PODACI O PACIJENTU ──────────────────────── -->
       <mat-step label="Patient Info">
         <div class="step-content">
           <p class="step-desc">Enter basic patient information.</p>
@@ -52,7 +51,6 @@
         </div>
       </mat-step>
 
-      <!-- ── KORAK 2: IOP ──────────────────────────────────────── -->
       <mat-step label="IOP">
         <div class="step-content">
           <p class="step-desc">Enter intraocular pressure measurements for both eyes.</p>
@@ -84,7 +82,6 @@
         </div>
       </mat-step>
 
-      <!-- ── KORAK 3: SLIKE (opciono) ──────────────────────────── -->
       <mat-step label="Fundus Images">
         <div class="step-content">
           <p class="step-desc">
@@ -130,7 +127,6 @@
         </div>
       </mat-step>
 
-      <!-- ── KORAK 4: VF XML ───────────────────────────────────── -->
       <mat-step label="Visual Field">
         <div class="step-content">
           <p class="step-desc">
@@ -176,7 +172,6 @@
         </div>
       </mat-step>
 
-      <!-- ── KORAK 5: REVIEW & NOTES ───────────────────────────── -->
       <mat-step label="Review & Notes">
 
         <div class="loading-step" *ngIf="!examData">
@@ -186,7 +181,6 @@
 
         <div class="step-content" *ngIf="examData">
 
-          <!-- 1. SLIKE I PARAMETRI -->
           <div class="review-eyes">
             <div class="review-eye-col">
               <h4 class="eye-title">Right Eye (OD)</h4>
@@ -235,7 +229,6 @@
             </div>
           </div>
 
-          <!-- Toggle maska -->
           <div class="mask-toggle"
                *ngIf="examData.od_multimedija?.image_path || examData.os_multimedija?.image_path">
             <button mat-stroked-button (click)="prikaziMasku = !prikaziMasku">
@@ -244,7 +237,6 @@
             </button>
           </div>
 
-          <!-- 2. VF TABELA -->
           <div class="vf-section" *ngIf="examData.od_vf_matrix || examData.os_vf_matrix">
             <h4 class="section-label">Visual Field — Perimetry Results</h4>
             <div class="vf-table-wrapper">
@@ -290,7 +282,6 @@
             </div>
           </div>
 
-          <!-- VF prosek -->
           <div class="vf-means" *ngIf="examData.od_vf_matrix || examData.os_vf_matrix">
             <div class="vf-mean-box" *ngIf="examData.od_vf_matrix">
               <span class="vf-mean-label">OD — Current VF mean</span>
@@ -302,7 +293,6 @@
             </div>
           </div>
 
-          <!-- 3. AI PREDIKCIJA -->
           <div class="pred-card">
             <div class="pred-title">
               <mat-icon>psychology</mat-icon>
@@ -328,7 +318,6 @@
             </div>
           </div>
 
-          <!-- 4. CCT + KOMENTAR + GLAUCOMA CATEGORY + TERAPIJA -->
           <form [formGroup]="reviewForm" class="notes-form">
 
             <mat-form-field appearance="outline" class="full-width">

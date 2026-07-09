@@ -38,13 +38,11 @@ export class ExaminationForm implements OnInit {
   patientId!: number;
   patientName = '';
 
-  // Korak 1 — IOP
   iopForm!: FormGroup;
   savingIop = false;
   iopError = '';
   examId: number | null = null;
 
-  // Korak 2 — Slike (opciono)
   imageODFile: File | null = null;
   imageODName = '';
   imageOSFile: File | null = null;
@@ -52,7 +50,6 @@ export class ExaminationForm implements OnInit {
   savingImages = false;
   imagesError = '';
 
-  // Korak 3 — VF XML
   vfODFile: File | null = null;
   vfODName = '';
   vfOSFile: File | null = null;
@@ -60,7 +57,6 @@ export class ExaminationForm implements OnInit {
   savingVf = false;
   vfError = '';
 
-  // Korak 4 — Review
   notesForm!: FormGroup;
   savingNotes = false;
   notesError = '';
@@ -100,7 +96,6 @@ export class ExaminationForm implements OnInit {
     });
   }
 
-  // ── KORAK 1 ─────────────────────────────────────────────────────────
   submitIop(): void {
     if (this.iopForm.invalid) return;
     this.savingIop = true;
@@ -122,7 +117,6 @@ export class ExaminationForm implements OnInit {
     });
   }
 
-  // ── KORAK 2 ─────────────────────────────────────────────────────────
   onImageSelected(event: any, eye: 'OD' | 'OS'): void {
     const file: File = event.target.files[0];
     if (!file) return;
@@ -146,7 +140,6 @@ export class ExaminationForm implements OnInit {
     });
   }
 
-  // ── KORAK 3 ─────────────────────────────────────────────────────────
   onVfSelected(event: any, eye: 'OD' | 'OS'): void {
     const file: File = event.target.files[0];
     if (!file) return;
@@ -187,7 +180,6 @@ export class ExaminationForm implements OnInit {
     });
   }
 
-  // Učitava exam podatke i pokreće predikciju, pa prelazi na korak 4
   private loadExamAndPredict(): void {
     this.predLoading = true;
 
@@ -216,7 +208,6 @@ export class ExaminationForm implements OnInit {
     });
   }
 
-  // ── KORAK 4 ─────────────────────────────────────────────────────────
   submitNotes(): void {
     if (this.notesForm.invalid) return;
     this.savingNotes = true;
@@ -236,8 +227,6 @@ export class ExaminationForm implements OnInit {
     });
   }
 
-  // Parsira vf_matrix iz backenda — sačuvan kao JSON niz ("[21,22,...]").
-  // null i -1 u nizu su slepe tačke — normalizujemo ih na -1.
   parseVf(matrix: string | null): number[] {
     if (!matrix) return [];
     try {
@@ -246,14 +235,12 @@ export class ExaminationForm implements OnInit {
         return parsed.map(v => (v === null || v === -1) ? -1 : Number(v));
       }
     } catch {}
-    // Fallback: CSV format
     return matrix.split(',').map(v => {
       const t = v.trim();
       return (t === '' || t === '-1' || t === 'null') ? -1 : parseFloat(t);
     });
   }
 
-  // Prosek VF vrednosti za trenutni pregled, isključujući slepe tačke (-1)
   vfMean(matrix: string | null): number {
     const vals = this.parseVf(matrix).filter(v => v !== -1);
     if (vals.length === 0) return 0;
