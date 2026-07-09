@@ -7,10 +7,10 @@ class DiceLoss(nn.Module):
         self.smooth = smooth
 
     def forward(self, preds, targets):
-        # Primena sigmoid funkcije da prebacimo logits u verovatnoće (0 do 1)
+        
         preds = torch.sigmoid(preds)
         
-        # Sravnjujemo tenzore (flatten) da olakšamo računanje po pikselima
+        
         preds = preds.view(-1)
         targets = targets.view(-1)
         
@@ -27,14 +27,10 @@ class CombinedDiceBCELoss(nn.Module):
         self.dice = DiceLoss(smooth)
 
     def forward(self, preds, targets):
-        """
-        preds: Izlaz iz modela oblika [Batch, Kanali, H, W] - sirovi logits
-        targets: Prave maske iz dataseta istog oblika
-        """
-        # Računamo gubitak za oba kanala (Kanal 0: Disk, Kanal 1: Kup)
+        
         bce_loss = self.bce(preds, targets)
         dice_loss = self.dice(preds, targets)
         
-        # Kombinovana težinska suma
+        
         total_loss = (self.bce_weight * bce_loss) + ((1 - self.bce_weight) * dice_loss)
         return total_loss

@@ -4,20 +4,7 @@ import config
 
 
 def flatten_multirow_columns(df):
-    """
-    Spljošćuje dvoredi (multi-row) Excel header u jednoznačne string
-    nazive kolona, npr.:
-      ('Progression Status', 'PLR2')      -> 'Progression Status_PLR2'
-      ('VF', 0)                            -> 'VF_0'
-      ('Subject Number', 'Unnamed: ...')   -> 'Subject Number'
-
-    Ovo je potrebno jer pandas/openpyxl NE podržava snimanje MultiIndex
-    kolona u Excel kada je index=False (NotImplementedError), pa se mora
-    flatten-ovati PRE čuvanja na disk. Pošto se flatten radi na isti,
-    deterministički način svuda u pipeline-u (ovde i u
-    create_gru_sequences.py), informacija iz originalnog dvorednog
-    headera se ne gubi — samo se predstavlja kao ravni string.
-    """
+    
     new_cols = []
     for top, bottom in df.columns:
         top = str(top).strip()

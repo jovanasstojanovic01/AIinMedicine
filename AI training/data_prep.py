@@ -19,34 +19,12 @@ def get_val(row, col_name, is_float=True):
 
 
 def get_vf_columns(df):
-    """
-    Vraća listu VF_* kolona ('VF_0'...'VF_60'), sortiranih po numeričkom
-    indeksu (ne leksikografski — 'VF_10' ne sme doći pre 'VF_2'). Isti
-    pristup kao u create_gru_sequences.py, da se VF redosled ne raskorači
-    između GRU pipeline-a i ove tabele.
-    """
     cols = [c for c in df.columns if VF_COLUMN_PATTERN.match(str(c))]
     cols.sort(key=lambda c: int(VF_COLUMN_PATTERN.match(c).group(1)))
     return cols
 
 
 def serialize_vf(row, vf_cols):
-    """
-    Spaja 61 VF vrednost jednog reda (oka, jedne posete) u JEDAN string
-    razdvojen zarezima, u rasporedu VF_0,VF_1,...,VF_60 — umesto da se
-    doda 61 zasebna kolona u exams tabelu. Vrednost -1 (slepa tačka,
-    GRAPE konvencija) i NaN se čuvaju KAO ŠTO JESU u stringu (npr.
-    '21,-1,18,...') — ne brišu se niti zaokružuju ovde, jer to gubi
-    informaciju o tome koje su lokacije slepe tačke vs stvarno
-    izmerene. Ko god kasnije parsira ovaj string (npr. za VF_mean
-    izračun) treba sam da odluči kako tretira -1/NaN, isto kao što to
-    već radi compute_vf_mean u create_gru_sequences.py.
-
-    Vraća None ako red nema nijednu VF vrednost (npr. poseta bez VF
-    testa), umesto stringa punog praznina, da se jasno razlikuje
-    "nema VF testa" od "VF test sa svim NaN" (što se ionako ne bi smelo
-    desiti, ali bolje eksplicitno nego tiho).
-    """
     if row.empty or not vf_cols:
         return None
 
@@ -57,7 +35,7 @@ def serialize_vf(row, vf_cols):
     parts = []
     for v in values:
         if pd.isna(v):
-            parts.append("")  # prazno mesto čuva POZICIJU u nizu od 61
+            parts.append("")  
         else:
             parts.append(str(v) if float(v).is_integer() is False else str(int(v)))
     return ",".join(parts)
@@ -72,12 +50,12 @@ def main():
     followup_df = pd.read_excel(followup_path)
     features_df = pd.read_excel(features_path)
 
-    # NAPOMENA: merge_grape_data.py (ispravljena verzija) sada čita Excel
-    # sa multi-row headerom i flatten-uje kolone PRE snimanja, npr.
-    # "OCT RNFL thickness" + "Mean" -> "OCT RNFL thickness_Mean". Stari
-    # pristup sa "Unnamed: N" je bio fragilan (zavisio od tačnog broja
-    # kolona ispred) i tiho je mogao da pogodi pogrešnu kolonu. Ovde samo
-    # preimenujemo te već-jasne nazive u kraće radne nazive.
+    
+    
+    
+    
+    
+    
     baseline_mapping = {
         'OCT RNFL thickness_Mean': 'Mean',
         'OCT RNFL thickness_S': 'S',
@@ -94,7 +72,7 @@ def main():
     female_names_df = pd.read_excel(female_names_path)
     male_names_df = pd.read_excel(male_names_path)
 
-    # Čišćenje ID-jeva
+    
     baseline_df = baseline_df.dropna(subset=['Subject Number'])
     followup_df = followup_df.dropna(subset=['Subject Number'])
     
@@ -154,9 +132,9 @@ def main():
         start_date = datetime(random.randint(2015, 2020), random.randint(1, 12), random.randint(1, 28))
         baseline_exam_dates[subj_id] = start_date
 
-    # Konstruisanje tabele pacijenata - BEZ progression flegova. Pacijent
-    # tabela opisuje OSOBU (relativno stabilne atribute), ne nešto
-    # vremenski-zavisno kao dijagnozu — ona se prati po pregledu, ne ovde.
+    
+    
+    
     patients_table = pd.DataFrame({
         'patient_id': patients_raw['Subject Number'],
         'first_name': first_name_list,
@@ -175,23 +153,23 @@ def main():
     all_data_raw = pd.concat([baseline_df, followup_df], ignore_index=True)
     all_data_raw.sort_values(by=['Subject Number', 'Laterality', 'Visit Number'], inplace=True, ignore_index=True)
 
-    # VF_* kolone (VF_0...VF_60) se NE forward-fill-uju kao vCDR/
-    # Diagnosis/OCT — VF (perimetrija) je test koji se radi (ili ne) NA
-    # TOJ KONKRETNOJ poseti, za razliku od fundus slike koja realno može
-    # ostati "ista" ako nije ponovo snimljena. Ako poseta nema VF
-    # rezultat, serialize_vf niže vraća None — to je tačno željeno
-    # ponašanje (eksplicitno "nema VF za ovu posetu"), ne nešto što
-    # treba prepisivati sa prethodnog pregleda.
+    
+    
+    
+    
+    
+    
+    
     vf_columns = get_vf_columns(all_data_raw)
     if not vf_columns:
         print("[UPOZORENJE] Nisu pronađene VF_* kolone u baseline/follow-up tabelama — od_vf/os_vf će biti None za sve preglede.")
 
-    # NAPOMENA: 'Diagnosis' (REFUGE2 predikcija po slici: Healthy /
-    # Glaucoma Suspect) se forward-fill-uje na ISTI način kao i ostali
-    # parametri izvedeni iz slike (vCDR, Mean OCT, itd). To znači: ako
-    # konkretna poseta nema svoju sliku, dijagnoza se prepisuje sa
-    # PRETHODNOG pregleda istog oka — tačno traženo ponašanje, bez
-    # potrebe za posebnom logikom.
+    
+    
+    
+    
+    
+    
     potential_columns = ['Corresponding CFP', 'Mean', 'S', 'N', 'I', 'T', 'vCDR', 'hCDR', 'aCDR', 'Rim_Area_Pixels', 'Diagnosis']
     columns_to_fill = [col for col in potential_columns if col in all_data_raw.columns]
     
@@ -209,13 +187,13 @@ def main():
             return float(feat_df[col].iloc[0]) if pd.notna(feat_df[col].iloc[0]) else None
         return None
 
-    # multimedia_by_image: jedan ZAJEDNIČKI cache za OD i OS slike, jer
-    # ista logika (jedna slika = jedan multimedia zapis) važi za oba
-    # oka, i u principu ne postoji razlog da imena fajlova kolidiraju
-    # između OD/OS (sufiks _OD_/_OS_ je već deo naziva).
-    # Mapira: naziv_slike (str) -> multimedia_id (int)
+    
+    
+    
+    
+    
     multimedia_by_image = {}
-    multimedia_rows = []  # red po JEDINSTVENOJ slici, ne po pregledu
+    multimedia_rows = []  
 
     def get_or_create_multimedia_id(image_name, feat_df, row, vcdr_col, hcdr_col, acdr_col, rim_col):
         """
@@ -276,7 +254,7 @@ def main():
 
         max_iop = max(filter(None, [od_iop_val, os_iop_val]), default=16.0)
 
-        # Generisanje komentara na osnovu IOP pritiska (pošto smo izbacili MD iz exam-a)
+        
         if max_iop > 24:
             therapy_options = ["Surgery", "Enhanced drugs"]
             comments_options = [
@@ -299,12 +277,12 @@ def main():
         chosen_therapy = random.choice(therapy_options)
         chosen_comment = random.choice(comments_options)
 
-        # Lookup slike i UNet feature-a po oku PRE exam_data, jer
-        # determine_diagnosis (fallback za Predicted_Diagnosis) treba
-        # ove podatke. Forward-fill (ffill) je već popunio 'Diagnosis' u
-        # od_row/os_row za sve preglede koji imaju PRETHODNI pregled sa
-        # slikom — ovaj blok pokriva samo rubni slučaj kad je baš PRVA
-        # poseta oka bez sopstvene slike.
+        
+        
+        
+        
+        
+        
         od_img = get_val(od_row, 'Corresponding CFP', is_float=False)
         os_img = get_val(os_row, 'Corresponding CFP', is_float=False)
 
@@ -328,9 +306,9 @@ def main():
                 return val if pd.notna(val) else None
             return None
 
-        # Dedup lookup: vraća POSTOJEĆI multimedia_id ako je ova slika
-        # već viđena (npr. ffill-ovana sa prethodne posete istog oka),
-        # ili pravi NOV multimedia red samo ako je slika stvarno nova.
+        
+        
+        
         od_multimedia_id = get_or_create_multimedia_id(
             od_img, od_feat, od_row, 'vCDR', 'hCDR', 'aCDR', 'Rim_Area_Pixels'
         )
@@ -343,32 +321,32 @@ def main():
             'visit_number': int(visit_num),
             'exam_date': exam_date_str,
 
-            # FK ka multimedia tabeli — NULL ako ova poseta (i nijedna
-            # prethodna poseta istog oka) nema sliku. Smer FK je OVDE
-            # (exams -> multimedia), jer je relacija stvarno 1:N (jedna
-            # slika može biti referisana sa više pregleda), ne obrnuto.
+            
+            
+            
+            
             'od_multimedia_id': od_multimedia_id,
             'os_multimedia_id': os_multimedia_id,
 
-            # Right Eye (OD)
+            
             'od_iop': od_iop_val,
             'od_oct_mean': get_val(od_row, 'Mean'),
             'od_oct_s': get_val(od_row, 'S'),
             'od_oct_n': get_val(od_row, 'N'),
             'od_oct_i': get_val(od_row, 'I'),
             'od_oct_t': get_val(od_row, 'T'),
-            # Predicted_Diagnosis (REFUGE2): praćeno PO PREGLEDU, ne po
-            # pacijentu i ne po slici. Prvo se pokuša forward-filled
-            # vrednost (prepisana sa prethodnog pregleda ako ova poseta
-            # nema sopstvenu sliku); ako ni to ne postoji (prva poseta
-            # bez slike), pada se na direktan lookup iz features_df.
+            
+            
+            
+            
+            
             'od_diagnosis': determine_diagnosis(get_val(od_row, 'Diagnosis', is_float=False), od_feat),
-            # VF (vidno polje), 61 vrednost spojenih u JEDAN string
-            # razdvojen zarezima (raspored VF_0,VF_1,...,VF_60), umesto
-            # 61 zasebne kolone. None ako ova poseta nema VF test.
+            
+            
+            
             'od_vf': serialize_vf(od_row, vf_columns),
             
-            # Left Eye (OS)
+            
             'os_iop': os_iop_val,
             'os_oct_mean': get_val(os_row, 'Mean'),
             'os_oct_s': get_val(os_row, 'S'),
@@ -385,12 +363,12 @@ def main():
 
 
     exams_table = pd.DataFrame(exam_rows)
-    # multimedia_table je već kompletna iz get_or_create_multimedia_id:
-    # jedan red po JEDINSTVENOJ slici, sa multimedia_id dodeljenim u
-    # redosledu prvog viđenja. NE sme se ponovo sortirati ovde, jer bi
-    # to promenilo redosled redova bez ažuriranja multimedia_id vrednosti
-    # koje su exam_rows VEĆ zapamtili (od_multimedia_id/os_multimedia_id) —
-    # sortiranje bi raskinulo tu vezu.
+    
+    
+    
+    
+    
+    
     multimedia_table = pd.DataFrame(multimedia_rows)
 
     print("Merging and formatting final tables...")

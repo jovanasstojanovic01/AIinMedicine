@@ -12,7 +12,7 @@ import joblib
 from src import GlaucomaTemporalDataset, GlaucomaVFProgressionGRU, GlaucomaVFLoss
 import config
 
-import copy  # Trebaće nam za čuvanje najboljeg modela u memoriji
+import copy  
 
 def evaluate(model, loader, criterion, device):
     model.eval()
@@ -53,9 +53,6 @@ def evaluate(model, loader, criterion, device):
 
 
 def collate_with_lengths(batch):
-    """Pravi lengths tenzor iz batch-a (lengths se izvodi iz maske, ne
-    čuva se posebno u Dataset-u da bi se izbeglo nekonzistentno čuvanje
-    dve verzije iste informacije)."""
     xs, ys, masks = zip(*batch)
     xs = torch.stack(xs)
     ys = torch.stack(ys)
@@ -97,9 +94,9 @@ def main():
 
     print(f"Trening sekvenci: {len(train_idx)} | Validacionih sekvenci: {len(val_idx)}")
 
-    # StandardScaler se fituje SAMO na trening podacima (i samo na
-    # validnim, ne-padding koracima), da se izbegne curenje informacija
-    # iz validacionog seta u statistiku skaliranja.
+    
+    
+    
     scaler = StandardScaler()
     X_train_2d = X_train_raw.reshape(-1, num_features)
     valid_rows_train = ~np.all(X_train_2d == 0, axis=1)
@@ -165,31 +162,31 @@ def main():
         epoch_train_loss /= len(train_loader.dataset)
         train_losses.append(epoch_train_loss)
         
-        # Evaluacija
+        
         val_loss, val_mae, val_rmse, val_r2 = evaluate(model, val_loader, criterion, device)
         val_losses.append(val_loss)
         
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             
-            # === DODATO: Čuvanje najboljih težina u memoriji i reset brojača ===
+            
             best_model_wts = copy.deepcopy(model.state_dict())
             stagnation_counter = 0
-            # ==================================================================
+            
             
             torch.save(model.state_dict(), gru_checkpoint_path)
             print(
                 f"   [Novi minimum] Epoha {epoch} -> Val MSE: {val_loss:.4f} "
                 f"| MAE: {val_mae:.3f} dB-ekv | RMSE: {val_rmse:.3f} | R2: {val_r2:.3f}"
             )
-        # === DODATO: Ako nema poboljšanja, uvećaj brojač stagnacije ===
+        
         else:
             stagnation_counter += 1
             print(
                 f"   [Bez poboljšanja] Epoha {epoch} -> Val MSE: {val_loss:.4f} "
                 f"(Stagnacija: {stagnation_counter}/{patience})"
             )
-        # ==============================================================
+        
             
         if epoch % 5 == 0 or epoch == config.EPOCHS:
             print(
@@ -197,7 +194,7 @@ def main():
                 f"| Val MSE: {val_loss:.4f} | Val MAE: {val_mae:.3f}"
             )
 
-        # === DODATO: Provera uslova za Early Stopping prekid ===
+        
         if stagnation_counter >= patience:
             print(f"\n[EARLY STOPPING] Trening prekinut u epohi {epoch} jer se Val MSE nije smanjio tokom poslednjih {patience} epoha.")
             break

@@ -5,11 +5,11 @@ import pandas as pd
 import config
 from utils import correct_IOP
 
-# Slepe tačke i nepouzdana merenja su markirana sa -1 u GRAPE VF kolonama.
+
 VF_BLIND_SPOT_VALUE = -1
 
-# Pattern za flatten-ovane VF kolone koje pravi merge_grape_data.py
-# (flatten_multirow_columns): "VF_0", "VF_1", ..., "VF_60".
+
+
 VF_COLUMN_PATTERN = re.compile(r"^VF_(\d+)$")
 
 
@@ -71,18 +71,18 @@ def main():
     df_b["VF_mean"] = compute_vf_mean(df_b, vf_cols_b)
     df_f["VF_mean"] = compute_vf_mean(df_f, vf_cols_f)
 
-    # Baseline poseta je uvek vizit broj 0 u hronologiji pacijenta.
+    
     df_b["Visit Number"] = 0
 
-    # vCDR/hCDR/aCDR/Rim_Area_Pixels dolaze iz merge_grape_data.py (UNet
-    # ekstrakcija po slici). IOP postoji direktno u oba sheeta. VF_mean
-    # je upravo izračunat gore.
+    
+    
+    
     features_list = ["IOP_corrected", "vCDR", "hCDR", "aCDR", "Rim_Area_Pixels", "Interval Years","VF_mean"]
     id_cols = ["Subject Number", "Laterality", "Visit Number"]
     baseline_only_cols = ["CCT"]
 
     required_b = id_cols + ["IOP", "vCDR", "hCDR", "aCDR", "Rim_Area_Pixels", "VF_mean"] + baseline_only_cols
-    required_f = id_cols + ["IOP", "vCDR", "hCDR", "aCDR", "Rim_Area_Pixels", "Interval Years","VF_mean"] # followup nema CCT
+    required_f = id_cols + ["IOP", "vCDR", "hCDR", "aCDR", "Rim_Area_Pixels", "Interval Years","VF_mean"] 
 
     missing_b = [c for c in required_b if c not in df_b.columns]
     missing_f = [c for c in required_f if c not in df_f.columns]
@@ -117,12 +117,12 @@ def main():
 
         n_visits = feats.shape[0]
         if n_visits < 2:
-            # Nema "sledeće" posete da bude target — oko se ne može
-            # koristiti za next-step predikciju.
+            
+            
             continue
 
-        # Ulaz: posete 0..n-2 (sve osim zadnje)
-        # Target: VF_mean posete 1..n-1 (svaka "sledeća" poseta, korak po korak)
+        
+        
         x_eye = feats[:-1, :]
         y_eye = feats[1:, vf_mean_idx]
 
@@ -138,14 +138,14 @@ def main():
     for x_eye, y_eye in per_eye_data:
         actual_steps = x_eye.shape[0]
 
-        # RIGHT-PADDING (stvarni podaci prvi, nule na kraju). Ispravka
-        # kritičnog bug-a iz prethodne verzije: padding je bio na
-        # POČETKU niza (padded[-actual_steps:] = ...), ali
-        # pack_padded_sequence pretpostavlja right-padding i koristi
-        # 'lengths' da odseče od početka niza — sa left-padding-om je
-        # efektivno odsecao stvarne podatke i ostavljao nule, tako da se
-        # model trenirao na paddingu umesto na stvarnoj istoriji za sva
-        # oka kraća od max_input_steps.
+        
+        
+        
+        
+        
+        
+        
+        
         padded_x = np.zeros((max_input_steps, num_features), dtype=np.float32)
         padded_y = np.zeros((max_input_steps,), dtype=np.float32)
         padded_mask = np.zeros((max_input_steps,), dtype=np.float32)
@@ -159,10 +159,10 @@ def main():
         target_mask.append(padded_mask)
         lengths_list.append(actual_steps)
 
-    X = np.array(X_sequences, dtype=np.float32)       # (N_ociju, max_steps, n_features)
-    y = np.array(y_targets, dtype=np.float32)          # (N_ociju, max_steps) - VF_mean SLEDEĆE posete
-    mask = np.array(target_mask, dtype=np.float32)     # (N_ociju, max_steps) - 1.0 gde y važi
-    lengths = np.array(lengths_list, dtype=np.int32)   # (N_ociju,) - broj validnih ulaznih koraka
+    X = np.array(X_sequences, dtype=np.float32)       
+    y = np.array(y_targets, dtype=np.float32)          
+    mask = np.array(target_mask, dtype=np.float32)     
+    lengths = np.array(lengths_list, dtype=np.int32)   
 
     os.makedirs(config.OUTPUT_DIR, exist_ok=True)
     np.save(output_x_path, X)

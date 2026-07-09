@@ -3,7 +3,7 @@ import train
 import evaluate
 
 def main():
-    # Postavljamo argumente za komandnu liniju kako bi fajl bio fleksibilan
+    
     parser = argparse.ArgumentParser(description="Glavni pokretač Glaukom Pipeline-a")
     
     parser.add_argument(
@@ -29,14 +29,14 @@ def main():
         print("=== ZAPOČINJANJE KOMPLETNOG DIAGNOSTIČKOG PIPELINE-A ===")
         print("==================================================")
         
-        # 1. Prvo se pokreće trening
+        
         print("\n[KORAK 1/2] Pokretanje treninga mreže...")
         train.main()
         
         print("\n[INFO] Trening uspešno završen. Prelazak na evaluaciju...")
         print("--------------------------------------------------")
         
-        # 2. Odmah nakon treninga se pokreće evaluacija na test setu
+        
         print("\n[KORAK 2/2] Pokretanje evaluacije i ekstrakcije kliničkih parametara...")
         evaluate.main()
         

@@ -40,12 +40,12 @@ class UpSample(nn.Module):
     def forward(self, x1, x2):
         x1 = self.up(x1)
         
-        # U slučaju da dimenzije nisu savršeno deljive sa 2, radimo padding
+        
         diffY = x2.size()[2] - x1.size()[2]
         diffX = x2.size()[3] - x1.size()[3]
         x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2, diffY // 2, diffY - diffY // 2])
         
-        # Spajanje karakteristika iz enkodera (skip connection)
+        
         x = torch.cat([x2, x1], dim=1)
         return self.conv(x)
 
@@ -63,7 +63,7 @@ class RefugeUNet(nn.Module):
         self.up3 = UpSample(256, 128)
         self.up4 = UpSample(128, 64)
         
-        # Izlazni sloj daje 2 kanala (Kanal 0: Disk maska, Kanal 1: Cup maska)
+        
         self.outc = nn.Conv2d(64, out_channels, kernel_size=1)
 
     def forward(self, x):
@@ -82,8 +82,8 @@ class RefugeUNet(nn.Module):
         return logits
 
 if __name__ == "__main__":
-    # Brzi test provere dimenzija modela
+    
     model = RefugeUNet()
-    test_tensor = torch.randn(1, 3, 512, 512) # Batch od 1 slike, 3 kanala, 512x512
+    test_tensor = torch.randn(1, 3, 512, 512) 
     output = model(test_tensor)
     print("Izlazni oblik modela (mora biti [1, 2, 512, 512]):", output.shape)
