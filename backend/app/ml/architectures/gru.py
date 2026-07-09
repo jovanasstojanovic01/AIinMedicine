@@ -6,7 +6,7 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 class GlaucomaVFProgressionGRU(nn.Module):
     """
     GRU za PER-VISIT predikciju: na osnovu istorije poseta do koraka t,
-    predviđa VF_mean (proxy-MD) na poseti t+1 na osnovu istorije poseta.
+    predviđa VF_mean na poseti t+1 na osnovu istorije poseta.
     """
 
     def __init__(self, input_size, hidden_size, num_layers, dropout):
