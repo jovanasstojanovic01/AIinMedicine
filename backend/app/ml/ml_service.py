@@ -25,7 +25,7 @@ class MLInferenceService:
         self._load_models()
 
     def _load_models(self):
-        
+        #Ucitavanje modela
         
         self.unet = RefugeUNet().to(self.device)
         unet_path = current_app.config['REFUGEUNET_WEIGHTS']
@@ -44,10 +44,10 @@ class MLInferenceService:
 
         
     import torchvision.transforms as T
-
+    #Priprema fundus fotografije
     def _preprocess_image(self, image_bytes, target_size=(current_app.config['CFP_IMAGE_SIZE'], current_app.config['CFP_IMAGE_SIZE'])):
         image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
-        
+        # Transformacije za pripremu slike - promena veličine, normalizacija koriscena u toku treninga
         transform_pipeline = T.Compose([
             T.Resize(target_size),
             T.ToTensor(),  
@@ -110,10 +110,8 @@ class MLInferenceService:
                 prethodni_datum = p.exam_date
                 sirovi_iop = p.od_iop if eye == "OD" else p.os_iop
                 
-                
                 vcdr, hcdr, acdr, rim_area = 0.0, 0.0, 0.0, 0.0
             
-                
                 m_obj = p.od_multimedija if eye == "OD" else p.os_multimedija
                 
                 if m_obj:
@@ -124,17 +122,17 @@ class MLInferenceService:
                     rim_area = m_obj.rim_area_pixels
 
                 json_str = p.od_vf_matrix if eye == "OD" else p.os_vf_matrix
+                #Racunanje prosecne vrednosti VF
                 if json_str:
                     vf_niz = json.loads(json_str)
                     validne_tacke = [float(x) for x in vf_niz if x != -1]
                     vf_mean = np.mean(validne_tacke) if validne_tacke else 0.0
                 else:
                     vf_mean = 0.0
-                print(vf_mean)
-                
+                #Korekcija IOP-a na osnovu debljine rožnjače
                 iop_corrected = float(correct_IOP(sirovi_iop or 0.0, cct_pacijenta or 540.0))
 
-                
+                #Izdvajanje karakteristika za posetu
                 privremene_posete.append([
                     iop_corrected,
                     float(vcdr or 0.0),
@@ -146,20 +144,19 @@ class MLInferenceService:
                 ])
 
             sirovi_niz = np.array(privremene_posete, dtype=np.float32)
+            #Skaliranje ulaznih podataka
             skalirani_niz = self.scaler.transform(sirovi_niz)
             broj_poseta = len(privremene_posete)
 
             x_tensor = torch.tensor([skalirani_niz], dtype=torch.float32).to(self.device)
-            
+            #Broj poseta za padding
             lengths_tensor = torch.tensor([broj_poseta], dtype=torch.int64).to(self.device)
 
             
             with torch.no_grad():
                 
                 preds = self.gru(x_tensor, lengths_tensor)
-                
-                
-                
+                # Izdvajanje predikcije
                 prediktovani_vf_mean = preds[0][-1].item()
 
             return float(prediktovani_vf_mean)
