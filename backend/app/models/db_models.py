@@ -4,7 +4,7 @@ from app.extensions import db
 
 
 
-
+#Tabela pacijenata
 class Pacijent(db.Model):
     __tablename__ = "table_patients"
 
@@ -13,6 +13,7 @@ class Pacijent(db.Model):
     last_name         = db.Column(db.String(100), nullable=False)
     gender            = db.Column(db.Enum("M", "F"), nullable=False)
     birth_date        = db.Column(db.Date, nullable=False)
+    # Debljina rožnjače
     cct               = db.Column(db.Float)
     glaucoma_category = db.Column(db.Enum("None", "ACG", "OAG", name="glaucoma_categories"))
 
@@ -25,50 +26,44 @@ class Pacijent(db.Model):
 
 
 
-
+#Tabela pregleda
 class Pregled(db.Model):
     __tablename__ = "table_exams"
 
     exam_id              = db.Column(db.Integer, primary_key=True, autoincrement=True)
     patient_id           = db.Column(db.Integer, db.ForeignKey("table_patients.patient_id"), nullable=False)
+    #Redni broj posete po pacijentu
     visit_number         = db.Column(db.Integer, nullable=False)
     exam_date            = db.Column(db.Date, nullable=False)
-    #interval_godina      = db.Column(db.Float, nullable=True) 
 
-    
+    # Intraokularni pritisak desnog oka
     od_iop                = db.Column(db.Float)
+    #Dijagnoza desnog oka
     od_diagnosis=db.Column(db.Enum("Glaucoma Suspect / Positive","Healthy"), nullable=True)
+    #VF matrica desnog oka
     od_vf_matrix = db.Column(db.Text, nullable=True)
+    #Naziv originalnog XML fajl perimetrije desnog oka
     od_vf_file = db.Column(db.String(255), nullable=True)
     od_multimedia_id = db.Column(db.Integer, db.ForeignKey("table_multimedia.multimedia_id"), nullable=True)
+    #Predikcija VF_mean za desno oko na sledećoj poseti
     od_next_vf_mean_pred = db.Column(db.Float, nullable=True)
-    # od_md                 = db.Column(db.Float)
-    # od_oct_mean           = db.Column(db.Float)
-    # od_oct_s              = db.Column(db.Float)
-    # od_oct_n              = db.Column(db.Float)
-    # od_oct_i              = db.Column(db.Float)
-    # od_oct_t              = db.Column(db.Float)
-    # od_progression_status = db.Column(db.Integer, default=0)
 
-    
+    #Intraokularni pritisak levog oka
     os_iop                = db.Column(db.Float)
+    #Dijagnoza levog oka
     os_diagnosis=db.Column(db.Enum("Glaucoma Suspect / Positive","Healthy"), nullable=True)
+    #VF matrica levog oka
     os_vf_matrix = db.Column(db.Text, nullable=True)
+    #Naziv originalnog XML fajl perimetrije levog oka
     os_vf_file = db.Column(db.String(255), nullable=True)
     os_multimedia_id = db.Column(db.Integer, db.ForeignKey("table_multimedia.multimedia_id"), nullable=True)
+
+    #Predikcija VF_mean za levo oko na sledećoj poseti
     os_next_vf_mean_pred = db.Column(db.Float, nullable=True)
-    # os_md                 = db.Column(db.Float)
-    # os_oct_mean           = db.Column(db.Float)
-    # os_oct_s              = db.Column(db.Float)
-    # os_oct_n              = db.Column(db.Float)
-    # os_oct_i              = db.Column(db.Float)
-    # os_oct_t              = db.Column(db.Float)
-    # os_progression_status = db.Column(db.Integer, default=0)
 
     
     physician_comment    = db.Column(db.Text)
     therapy              = db.Column(db.Text)
-    #ai_predlog_terapije  = db.Column(db.Text, nullable=True)
 
     
     pacijent    = db.relationship("Pacijent", back_populates="pregledi")
@@ -80,13 +75,13 @@ class Pregled(db.Model):
 
 
 
-
+#Fundus slike
 class PregledMultimedija(db.Model):
     __tablename__ = "table_multimedia"
 
     multimedia_id      = db.Column(db.Integer, primary_key=True, autoincrement=True)
     image_path      = db.Column(db.String(255), nullable=True)
-
+    #Klinicki parametri izvuceni UNet modelom
     vcdr            = db.Column(db.Float)
     hcdr            = db.Column(db.Float)
     acdr            = db.Column(db.Float)

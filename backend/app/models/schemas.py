@@ -7,16 +7,12 @@ from marshmallow import fields
 
 
 
-
 class PregledMultimedijaSchema(SQLAlchemyAutoSchema):
     class Meta:
         model = PregledMultimedija
         load_instance = True
         sqla_session = db.session
         include_fk = True  
-
-
-
 
 
 class PacijentSchema(SQLAlchemyAutoSchema):
@@ -29,9 +25,6 @@ class PacijentSchema(SQLAlchemyAutoSchema):
     birth_date = fields.Date(format="%Y-%m-%d", required=True)
 
 
-
-
-
 class PregledSchema(SQLAlchemyAutoSchema):
     class Meta:
         model = Pregled
@@ -39,22 +32,15 @@ class PregledSchema(SQLAlchemyAutoSchema):
         sqla_session = db.session
         include_fk = True
 
-    
-    
     exam_date = fields.Date(format="%Y-%m-%d", required=True)
 
-    
     pacijent = fields.Nested(
         PacijentSchema, 
         only=("patient_id", "first_name", "last_name", "gender", "glaucoma_category")
     )
-    
-    
+
     od_multimedija = fields.Nested(PregledMultimedijaSchema, allow_none=True)
     os_multimedija = fields.Nested(PregledMultimedijaSchema, allow_none=True)
-
-
-
 
 
 patient_schema = PacijentSchema()

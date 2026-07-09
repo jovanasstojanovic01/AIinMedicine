@@ -18,8 +18,8 @@ bp = Blueprint("visits", __name__, url_prefix="/api/visits")
 @bp.post("/<int:exam_id>/predict-progression")
 def evaluate_visit_progression(exam_id):
     """
-    Pokreće novi GRU model koji na osnovu istorije poseta (zaključno sa ovom)
-    predviđa koliki će biti VF_mean na sledećoj poseti.
+    Obradjuje istoriju poseta (zaključno sa ovom) GRU modelom, vraca
+    predikciju koliki će biti VF_mean na sledećoj poseti.
     """
     eye = request.args.get("eye", "").upper()
     if eye not in ["OD", "OS"]:
@@ -32,6 +32,7 @@ def evaluate_visit_progression(exam_id):
 
     pacijent = trenutni_pregled.pacijent
     
+    #default prosecna vrednost CCT
     cct_pacijenta = pacijent.cct if pacijent else 540.0
 
     
@@ -116,8 +117,8 @@ def create_visit():
     except Exception as e:
         db.session.rollback()
         return error(f"Greška na serveru: {str(e)}", 500)
-    
 
+#Dodavanje perimetrije za pregled
 @bp.post("/<int:exam_id>/upload-perimetry")
 def upload_visit_perimetry(exam_id):
     
@@ -182,6 +183,7 @@ def upload_visit_perimetry(exam_id):
         
         db.session.rollback()
         return error(f"Greška tokom obrade XML fajla: {str(e)}", 500)
+#Otpremanje fundus fotografija
 @bp.post("/<int:exam_id>/upload-images")
 def upload_visit_images(exam_id):
     pregled = Pregled.query.get(exam_id)
@@ -199,16 +201,16 @@ def upload_visit_images(exam_id):
         
         if img_od and img_od.filename != '':
             img_bytes = img_od.read()
-            
+            #Obrada fotografije desnog oka Unet modelom
             ml_res_od = ml_service.predict_glaucoma_segmentation(img_bytes)
             
-            
+            #Cuvanje originalne slike
             unikatno_ime_od = generisi_jedinstveno_ime(img_od.filename)
             img_path_od = os.path.join(current_app.config['IMAGES_FOLDER'], unikatno_ime_od)
             img_od.seek(0)
             img_od.save(img_path_od)
 
-            
+            #Cuvanje maske
             mask_name_od = get_mask_filename(unikatno_ime_od)
             mask_path_od = os.path.join(current_app.config['MASKS_FOLDER'], mask_name_od)
             if "mask_bytes" in ml_res_od:
@@ -234,16 +236,16 @@ def upload_visit_images(exam_id):
         
         if img_os and img_os.filename != '':
             img_bytes = img_os.read()
-            
+            #Obrada fotografije levog oka Unet modelom
             ml_res_os = ml_service.predict_glaucoma_segmentation(img_bytes)
             
-            
+            #Cuvanje originalne slike
             unikatno_ime_os = generisi_jedinstveno_ime(img_os.filename)
             img_path_os = os.path.join(current_app.config['IMAGES_FOLDER'], unikatno_ime_os)
             img_os.seek(0)
             img_os.save(img_path_os)
 
-            
+            #Cuvanje maske
             mask_name_os = get_mask_filename(unikatno_ime_os)
             mask_path_os = os.path.join(current_app.config['MASKS_FOLDER'], mask_name_os)
             if "mask_bytes" in ml_res_os:
@@ -273,7 +275,7 @@ def upload_visit_images(exam_id):
     except Exception as e:
         db.session.rollback()
         return error(f"Greška tokom obrade medija: {str(e)}", 500)
-
+#Preuzimanje svih pregleda
 @bp.get("")
 def list_all_visits():
     page = request.args.get("page", 1, type=int)
@@ -295,7 +297,7 @@ def list_all_visits():
 
 
 
-
+#Preuzimanje pregleda po pacijentu
 @bp.get("/patient/<int:patient_id>")
 def get_visits_by_patient(patient_id):
     
@@ -327,7 +329,7 @@ def get_visits_by_patient(patient_id):
         "current_page": page
     })
 
-
+# Preuzimanje pregleda po ID-u
 @bp.get("/<int:exam_id>")
 def get_visit(exam_id):
     v = Pregled.query.get(exam_id)
@@ -337,36 +339,7 @@ def get_visit(exam_id):
     return ok(visit_schema.dump(v))
 
 
-
-# def sacuvaj_i_analiziraj_sliku(img_file):
-#     if not img_file or img_file.filename == '':
-#         return None, None, 0.0
-
-#     img_bytes = img_file.read()
-#     ml_res = ml_service.predict_glaucoma_segmentation(img_bytes)
-    
-#     unikatno_ime = generisi_jedinstveno_ime(img_file.filename)
-
-#     img_path = os.path.join(current_app.config['IMAGES_FOLDER'], unikatno_ime)
-#     img_file.seek(0)
-#     img_file.save(img_path)
-
-    
-
-
-#     mask_filename = get_mask_filename(unikatno_ime)
-#     mask_path = os.path.join(current_app.config['MASKS_FOLDER'], mask_filename)
-
-    
-    
-    # if "mask_bytes" in ml_res:
-    #     with open(mask_path, "wb") as f:
-    #         f.write(ml_res["mask_bytes"])
-    
-    # return unikatno_ime, ml_res["vcdr"], ml_res.get("status", "")
-
-
-
+#Update pregleda po ID-u
 @bp.put("/<int:exam_id>")
 def update_visit(exam_id):
     v = Pregled.query.get(exam_id)
@@ -389,7 +362,7 @@ def update_visit(exam_id):
 
 
 
-
+#Brisanje pregleda po ID-u
 @bp.delete("/<int:exam_id>")
 def delete_visit(exam_id):
     v = Pregled.query.get(exam_id)

@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 
 from flask import current_app, json
 
+# Generisanje jedinstvenog imena za cuvanje fajla
 def generisi_jedinstveno_ime(original_filename):
     if not original_filename:
         return None
@@ -17,6 +18,7 @@ def generisi_jedinstveno_ime(original_filename):
     jedinstveni_id = str(uuid.uuid4())
     
     return f"{jedinstveni_id}{ekstenzija}"
+#Hardcodovano generisanje naziva fajla za masku fundus fotografije
 def get_mask_filename(original_filename):
     if not original_filename:
         return None
@@ -25,6 +27,8 @@ def get_mask_filename(original_filename):
     base_name, _ = os.path.splitext(original_filename)
     
     return f"{base_name}_mask.png"
+
+#Citanje VF vrednosti iz XML perimetrijskog fajla
 def read_vf_xml(xml_bytes):
     root = ET.fromstring(xml_bytes)
 
@@ -35,9 +39,11 @@ def read_vf_xml(xml_bytes):
         
     
     if len(vf_niz) != 61:
-        raise ValueError(f"Greška: Očekivan 61 parametar iz Octopus fajla, dobijeno {len(vf_niz)}.")
+        raise ValueError(f"Greška: Očekivan 61 parametar, dobijeno {len(vf_niz)}.")
 
     return vf_niz
+
+
 def read_and_save_vf_xml(xml_file):
     if not xml_file or xml_file.filename == '':
         return

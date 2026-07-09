@@ -1,5 +1,5 @@
 import numpy as np
-
+# Pomocna funkcija za racunanje korigovanog IOP na osnovu debljine roznjace CCT
 def correct_IOP(iop, cct, bazni_cct=545.0, faktor=0.05):
     # Formula: Korigovani IOP = Izmereni IOP - (CCT - Bazni_CCT) * Faktor
     korigovani_iop = iop - (cct - bazni_cct) * faktor

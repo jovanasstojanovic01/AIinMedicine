@@ -22,6 +22,9 @@ def parsiraj_vf_string_u_listu(vf_string):
         return None
 
 def pokreni_migraciju():
+    """
+    Populisanje baze podataka iz Excel tabela.
+    """
     app = create_app()
     with app.app_context():
         print("⏳ Kreiranje tabela i brisanje starih podataka...")

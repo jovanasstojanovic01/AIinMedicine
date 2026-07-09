@@ -6,7 +6,7 @@ from app.utils.responses import error, not_found
 from app.models.db_models import Pregled
 
 bp = Blueprint("media", __name__, url_prefix="/api/media")
-
+#Preuzimanje fundus slike
 @bp.get("/image/<string:filename>")
 def serve_patient_image(filename):
     folder = current_app.config['IMAGES_FOLDER']
@@ -14,9 +14,10 @@ def serve_patient_image(filename):
         return not_found("Tražena slika ne postoji na serveru.")
         
     return send_from_directory(folder, filename)
-
+#Preuzimanje generisane maske za sliku
 @bp.get("/mask/<string:original_filename>")
 def serve_patient_mask(original_filename):
+    #Hardkodiran naziv fajla maske na osnovu originalnog fajla
     mask_filename = get_mask_filename(original_filename)
 
     folder = current_app.config['MASKS_FOLDER']
@@ -25,13 +26,9 @@ def serve_patient_mask(original_filename):
         
     return send_from_directory(folder, mask_filename)
 
-
+#Preuzimanje XML fajla perimetrije
 @bp.get("/<int:exam_id>/perimetry/download")
 def download_visit_perimetry(exam_id):
-    """
-    Ruta koja vraća XML fajl perimetrije za konkretan pregled na osnovu parametra 'eye'.
-    Primer: GET /api/visits/12/perimetry/download?eye=OD
-    """
     eye = request.args.get("eye", "").upper()
     if eye not in ["OD", "OS"]:
         return error("Parametar 'eye' mora biti 'OD' ili 'OS'.", 400)

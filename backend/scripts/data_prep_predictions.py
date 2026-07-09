@@ -8,6 +8,9 @@ from app import create_app
 
 
 def pokreni_predikcije_za_tabele():
+    """
+    Dopunjavanje tabela sa predikcijama iz GRU modela.
+    """
     app=create_app()
     with app.app_context():
         print("⏳ Pokretanje pre-prep procesa za predikcije...")

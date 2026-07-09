@@ -10,61 +10,7 @@ from app.utils.responses import ok, created, error, not_found
 from datetime import datetime
 
 bp = Blueprint("patients", __name__, url_prefix="/api/patients")
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-
-    
-
-
-        
-
-
-
-
-        
-
-
-
-        
-
-
-
-
-
-
-
-
-
-
-        
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
+#Preuzimanje pacijenata
 @bp.get("")
 def list_patients():
     page = request.args.get("page", 1, type=int)
@@ -74,6 +20,7 @@ def list_patients():
 
     q = Pacijent.query
     q = Pacijent.query
+    #Pretraga po imenu
     if search:
         
         like = f"%{search}%"
@@ -90,6 +37,7 @@ def list_patients():
             Pacijent.first_name.ilike(like) |
             Pacijent.last_name.ilike(like)
         )
+    # Pretraga po datumu rođenja
     if birth_date_str:
         try:
             
@@ -114,7 +62,7 @@ def list_patients():
         "page": page,
     })
 
-
+# Preuzimanje pacijenta po ID-u
 @bp.get("/<int:patient_id>")
 def get_patient(patient_id):
     p = Pacijent.query.get(patient_id)
@@ -123,7 +71,7 @@ def get_patient(patient_id):
     
     return ok(patient_schema.dump(p))
 
-
+# Update pacijenta
 @bp.put("/<int:patient_id>")
 def update_patient(patient_id):
     p = Pacijent.query.get(patient_id)
@@ -142,7 +90,7 @@ def update_patient(patient_id):
 
     db.session.commit()
     return ok(patient_schema.dump(p), "Podaci o pacijentu uspešno ažurirani.")
-
+#Kreiranje pacijenta
 @bp.post("")
 def create_patient():
     json_data = request.get_json(silent=True)
@@ -163,6 +111,7 @@ def create_patient():
     except Exception as e:
         db.session.rollback()
         return error(f"Greška: {str(e)}", 500)
+#Brisanje pacijenta
 @bp.delete("/<int:patient_id>")
 def delete_patient(patient_id):
     p = Pacijent.query.get(patient_id)
