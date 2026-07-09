@@ -40,7 +40,7 @@ export class PatientService {
     return this.http.delete<any>(`${this.baseUrl}/${id}`);
   }
 
-  // GET: /api/patients/:id/predict-progression (Veza sa GRU/XGBoost ansamblom)
+  // GET: /api/patients/:id/predict-progression
   predictProgression(id: number): Observable<ProgressionPrediction> {
     return this.http.get<ProgressionPrediction>(`${`${this.baseUrl}/${id}/predict-progression`}`);
   }

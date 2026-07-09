@@ -8,7 +8,7 @@ export class VisitService {
 
   constructor(private http: HttpClient) {}
 
-  // POST /api/visits — kreira pregled, prima ceo body sa IOP, komentarom...
+  // POST /api/visits — kreira pregled
   createNewExam(patientId: number, body: any): Observable<any> {
     return this.http.post<any>(this.baseUrl, { ...body, patient_id: patientId });
   }

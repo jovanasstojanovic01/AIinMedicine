@@ -8,11 +8,11 @@
 }
 
 .main-content {
-  flex: 7; /* Uzima 70% širine */
+  flex: 7; 
 }
 
 .side-panel {
-  flex: 3; /* Uzima 30% širine */
+  flex: 3; 
 }
 
 .table-card, .actions-card {
@@ -46,7 +46,6 @@ table {
   font-weight: 500;
 }
 
-// Stilovi za male lepe značke (Inicijalni / Kontrola)
 .badge {
   padding: 4px 8px;
   border-radius: 4px;
@@ -84,7 +83,7 @@ table {
 
 .action-btn {
   width: 100%;
-  padding: 24px 0; /* Čini dugmad većim i lakšim za klik lekara */
+  padding: 24px 0; 
   display: flex;
   align-items: center;
   justify-content: center;
@@ -92,7 +91,6 @@ table {
   font-size: 15px;
 }
 
-// Responzivnost za manje ekrane
 @media (max-width: 960px) {
   .dashboard-container {
     flex-direction: column;

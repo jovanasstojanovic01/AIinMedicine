@@ -9,7 +9,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 
-// Uvoz servisa i modela
 import { PatientService } from '../../core/http/patient.service';
 import { Patient } from '../../core/models/patient.model';
 
@@ -44,10 +43,10 @@ export class Dashboard implements OnInit {
   // Lista pacijenata koja se vezuje za mat-table
   patients: Patient[] = [];
 
-  // Model za dvosmerno vezivanje pretrage (ngModel)
+  // Dvosmerno vezivanje pretrage
   searchQuery: string = '';
 
-  // Injektovan ChangeDetectorRef (cdr) za trenutno osvežavanje pogleda
+  // ChangeDetectorRef za trenutno osvežavanje pogleda
   constructor(
     private patientService: PatientService,
     private cdr: ChangeDetectorRef,
@@ -57,18 +56,17 @@ export class Dashboard implements OnInit {
     this.ucitajPacijente();
   }
 
-  // Glavna funkcija za povlačenje podataka sa backenda
+  // Povlačenje podataka sa backenda
   ucitajPacijente(): void {
     this.patientService.getAllPatients(this.searchQuery, 1).subscribe({
       next: (response: any) => {
-        // Tačno mapiranje: Flask podatke pakuje u response.data.patients
         if (response && response.data && response.data.patients) {
           this.patients = response.data.patients;
         } else {
           this.patients = [];
         }
 
-        // Forsiramo Angular da odmah detektuje izmenu niza i iscrta tabelu na ekranu
+        // Detektovanje izmene niza i iscrtavanje tabele na ekranu
         this.cdr.detectChanges();
       },
       error: (err) => {
