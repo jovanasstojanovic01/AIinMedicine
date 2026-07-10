@@ -14,31 +14,12 @@ VF_COLUMN_PATTERN = re.compile(r"^VF_(\d+)$")
 
 
 def get_vf_columns(df):
-    """
-    Vraća listu flatten-ovanih VF kolona ('VF_0'...'VF_60'), sortiranih
-    po numeričkom indeksu (ne leksikografski, da 'VF_10' ne dođe pre
-    'VF_2').
-    """
     cols = [c for c in df.columns if VF_COLUMN_PATTERN.match(str(c))]
     cols.sort(key=lambda c: int(VF_COLUMN_PATTERN.match(c).group(1)))
     return cols
 
 
 def compute_vf_mean(df, vf_cols):
-    """
-    Računa prosečnu svetlosnu osetljivost vidnog polja (VF) po redu,
-    isključujući slepe tačke (-1) i bilo koji NaN.
-
-    Ovo je proxy za MD (mean deviation): pravi MD bi bio prosek TD
-    vrednosti (izmereno - normativno_po_starosti), ali GRAPE Excel ne
-    sadrži starosno-normirane vrednosti niti gotovu MD kolonu po
-    follow-up poseti — jedina "MD" kolona u fajlu je binarni progression
-    flag na baseline-u (Progression Status_MD), ne kontinuelna vrednost
-    u dB, i ne postoji nikakva MD vrednost na follow-up sheetu. Prosečna
-    sirova senzitivnost preko validnih lokacija je monotono povezana sa
-    funkcionalnim propadanjem vida i ne zahteva pretpostavljenu
-    normativnu tabelu koju ne imamo.
-    """
     vf_block = df[vf_cols].apply(pd.to_numeric, errors="coerce")
     masked = vf_block.where(vf_block != VF_BLIND_SPOT_VALUE)
     return masked.mean(axis=1, skipna=True)
@@ -117,11 +98,9 @@ def main():
 
         n_visits = feats.shape[0]
         if n_visits < 2:
-            
-            
+        
             continue
 
-        
         
         x_eye = feats[:-1, :]
         y_eye = feats[1:, vf_mean_idx]
@@ -138,13 +117,6 @@ def main():
     for x_eye, y_eye in per_eye_data:
         actual_steps = x_eye.shape[0]
 
-        
-        
-        
-        
-        
-        
-        
         
         padded_x = np.zeros((max_input_steps, num_features), dtype=np.float32)
         padded_y = np.zeros((max_input_steps,), dtype=np.float32)

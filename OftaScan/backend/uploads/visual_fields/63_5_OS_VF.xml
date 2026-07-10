@@ -1,0 +1,70 @@
+<?xml version="1.0" ?>
+<EyeSuiteExport>
+    <Patient ID="63" Lastname="Test" Firstname="Pacijent_63"/>
+    <Examination Program="G" Strategy="TOP" Eye="OS" VisitIndex="5">
+        <GlobalIndices MD="0.0" PSD="0.0"/>
+        <RawValues>
+            <Value PointID="1">9</Value>
+            <Value PointID="2">3</Value>
+            <Value PointID="3">3</Value>
+            <Value PointID="4">1</Value>
+            <Value PointID="5">18</Value>
+            <Value PointID="6">7</Value>
+            <Value PointID="7">5</Value>
+            <Value PointID="8">4</Value>
+            <Value PointID="9">6</Value>
+            <Value PointID="10">9</Value>
+            <Value PointID="11">8</Value>
+            <Value PointID="12">9</Value>
+            <Value PointID="13">15</Value>
+            <Value PointID="14">18</Value>
+            <Value PointID="15">6</Value>
+            <Value PointID="16">4</Value>
+            <Value PointID="17">-1</Value>
+            <Value PointID="18">0</Value>
+            <Value PointID="19">6</Value>
+            <Value PointID="20">-1</Value>
+            <Value PointID="21">4</Value>
+            <Value PointID="22">-1</Value>
+            <Value PointID="23">20</Value>
+            <Value PointID="24">19</Value>
+            <Value PointID="25">18</Value>
+            <Value PointID="26">25</Value>
+            <Value PointID="27">17</Value>
+            <Value PointID="28">-1</Value>
+            <Value PointID="29">-1</Value>
+            <Value PointID="30">-1</Value>
+            <Value PointID="31">3</Value>
+            <Value PointID="32">7</Value>
+            <Value PointID="33">-1</Value>
+            <Value PointID="34">25</Value>
+            <Value PointID="35">21</Value>
+            <Value PointID="36">24</Value>
+            <Value PointID="37">20</Value>
+            <Value PointID="38">22</Value>
+            <Value PointID="39">20</Value>
+            <Value PointID="40">23</Value>
+            <Value PointID="41">16</Value>
+            <Value PointID="42">17</Value>
+            <Value PointID="43">14</Value>
+            <Value PointID="44">-1</Value>
+            <Value PointID="45">-1</Value>
+            <Value PointID="46">-1</Value>
+            <Value PointID="47">-1</Value>
+            <Value PointID="48">-1</Value>
+            <Value PointID="49">11</Value>
+            <Value PointID="50">15</Value>
+            <Value PointID="51">18</Value>
+            <Value PointID="52">20</Value>
+            <Value PointID="53">24</Value>
+            <Value PointID="54">25</Value>
+            <Value PointID="55">23</Value>
+            <Value PointID="56">16</Value>
+            <Value PointID="57">8</Value>
+            <Value PointID="58">1</Value>
+            <Value PointID="59">-1</Value>
+            <Value PointID="60">9</Value>
+            <Value PointID="61">27</Value>
+        </RawValues>
+    </Examination>
+</EyeSuiteExport>

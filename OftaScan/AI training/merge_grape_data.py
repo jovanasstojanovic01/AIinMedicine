@@ -36,14 +36,6 @@ def main():
     print("-> Učitavanje podataka...")
     unet_df = pd.read_excel(unet_features_path)
 
-    # ISPRAVKA: čitamo sa header=[0, 1] (dvoredi/multi-row header), ne
-    # default header=0. Originalni Excel ima spojene ćelije (npr.
-    # "Progression Status" je nadzaglavlje za PLR2/PLR3/MD, "VF" je
-    # nadzaglavlje za 61 kolonu vrednosti). Sa header=0, pandas te
-    # pod-kolone čita kao "Unnamed: N", što je fragilno i zavisi od
-    # tačnog broja kolona ispred — male promene uzvodno tiho pomeraju
-    # koja "Unnamed" kolona odgovara PLR2 vs PLR3 vs MD (ovo je bio bug
-    # u prethodnoj verziji pipeline-a).
     df_baseline = pd.read_excel(grape_excel_path, sheet_name=0, header=[0, 1])
     df_followup = pd.read_excel(grape_excel_path, sheet_name=1, header=[0, 1])
 
@@ -59,14 +51,6 @@ def main():
     followup_merged = pd.merge(df_followup, unet_df, on="Corresponding CFP", how="left")
 
     unet_cols = ["vCDR", "hCDR", "aCDR", "Rim_Area_Pixels"]
-
-    # NAPOMENA: GRAPE follow-up sheet koristi '/' u koloni "Corresponding
-    # CFP" kada ta poseta NIJE imala urađen fundus foto (npr. poseta je
-    # bila samo IOP/VF kontrola, bez slikanja). To je OČEKIVAN, klinički
-    # legitiman slučaj — ne greška u merge-u. Razdvajamo ga od "stvarnog"
-    # promašaja (CFP naziv postoji, ali se ne poklapa sa UNet fajlom),
-    # jer ta dva slučaja zahtevaju različitu reakciju: prvi je normalan i
-    # ne treba upozorenje, drugi ukazuje na bug koji vredi istražiti.
     NO_CFP_MARKER = "/"
 
     for name, df_merged, df_original in [
@@ -83,20 +67,8 @@ def main():
         if n_real_mismatch > 0:
             print(f"   [UPOZORENJE] {n_real_mismatch} redova u {name} ima naziv CFP slike koji NE postoji u UNet feature fajlu — vredi proveriti zašto (npr. slika nije obrađena ekstrakcijom).")
 
-        # has_cfp = 1.0 ako poseta ima validnu CFP sliku I UNet je uspešno
-        # izvukao parametre iz nje; 0.0 inače (bilo da nema slike, bilo
-        # da je merge promašio). Ovo je feature koji ulazi u GRU da
-        # model nauči da razlikuje "stvarno izmereno" od "nedostaje".
         df_merged["has_cfp"] = (~missing_unet).astype(float)
 
-    # Popunjavamo vCDR/hCDR/aCDR/Rim_Area_Pixels sa 0.0 (NE medijanom)
-    # kada CFP nije dostupan. Razlog: medijana bi predstavila izmišljenu
-    # ali "plauzibilnu" vrednost kao da je stvarno izmerena, što je
-    # posebno problematično kada se to dešava za ~43% follow-up poseta
-    # (vidi dijagnostiku) — model bi učio na masovno izmišljenim
-    # vrednostima. Sa 0.0 + has_cfp=0.0 kao eksplicitan signal,
-    # mreža kroz trening uči da ignoriše ove kolone kada flag kaže da
-    # podatak ne postoji, umesto da uči lažnu korelaciju iz konstante.
     baseline_merged[unet_cols] = baseline_merged[unet_cols].fillna(0.0)
     followup_merged[unet_cols] = followup_merged[unet_cols].fillna(0.0)
 

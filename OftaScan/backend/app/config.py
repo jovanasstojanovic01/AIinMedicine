@@ -34,16 +34,11 @@ class Config:
         "SCALER_PATH", os.path.join(WEIGHTS_FOLDER, "scaler.pkl")
     )
 
-    VF_POINTS = 61
-
-    EXTRA_FEATURES = 5
-
-    INPUT_FEATURES = VF_POINTS + EXTRA_FEATURES  
 
     MAX_TIMESTEPS = 10
 
     HIDDEN_SIZE = 64
-    NUM_LAYERS = 2
+    NUM_LAYERS = 1
     DROPOUT = 0.3
 
     CFP_IMAGE_SIZE = 512
