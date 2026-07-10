@@ -196,20 +196,7 @@ def main():
     multimedia_rows = []  
 
     def get_or_create_multimedia_id(image_name, feat_df, row, vcdr_col, hcdr_col, acdr_col, rim_col):
-        """
-        Vraća postojeći multimedia_id za ovu sliku ako je već viđena
-        (deduplikacija — više pregleda koji DELE istu sliku referišu
-        ISTI multimedia zapis, ne prave svoj kopiran red). Ako slika
-        nije viđena, kreira NOV multimedia red sa UNet parametrima i
-        vraća njen ID.
-
-        Ovo je ISPRAVKA za originalni bug: ranija verzija je pravila
-        nov multimedia red ZA SVAKI exam (čak i kad je slika identična
-        prethodnoj, npr. ffill-ovana jer poseta nema sopstvenu sliku),
-        što je dupliralo vCDR/hCDR/aCDR/Rim_Area_Pixels bez potrebe i
-        dovelo do toga da multimedia_id == exam_id uvek (lažna 1:1
-        relacija umesto stvarne 1:N).
-        """
+       
         if image_name is None:
             return None
 
@@ -290,15 +277,7 @@ def main():
         os_feat = features_df[features_df['Corresponding CFP'] == os_img] if os_img else pd.DataFrame()
 
         def determine_diagnosis(diagnosis_already_filled, feat_df):
-            """
-            Fallback za slučaj kad forward-fill (ffill po Subject
-            Number+Laterality) nije imao šta da propagira — npr. kad je
-            BAŠ PRVA poseta tog oka bez svoje slike. U tom (rubnom)
-            slučaju nema "prethodnog pregleda" da se prepiše, pa se
-            uzima Diagnosis direktno iz features_df preko slike ako ona
-            ipak postoji u toj poseti, a u suprotnom ostaje None
-            (lekar nema AI predlog za tu posetu, mora sam da unese).
-            """
+         
             if diagnosis_already_filled is not None:
                 return diagnosis_already_filled
             if not feat_df.empty and 'Diagnosis' in feat_df.columns:
