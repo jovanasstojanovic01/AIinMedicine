@@ -1,4 +1,4 @@
-# OftoScan 👁️
+# OftaScan 👁️
 
 **Softverski sistem za podršku oftalmološkoj dijagnostici i praćenju glaukoma primenom dubokih neuronskih mreža**
 
@@ -30,7 +30,7 @@
 
 ## O projektu
 
-OftoScan je klinička web aplikacija koja integriše veštačku inteligenciju u oftalmološki dijagnostički tok za pacijente sa glaukomom. Sistem kombinuje dva AI modula:
+OftaScan je klinička web aplikacija koja integriše veštačku inteligenciju u oftalmološki dijagnostički tok za pacijente sa glaukomom. Sistem kombinuje dva AI modula:
 
 1. **UNet** — konvoluciona neuralna mreža za automatsku segmentaciju optičkog diska (OD) i optičke šolje (OC) na fundus fotografijama, uz ekstrakciju kliničkih parametara (vCDR, hCDR, aCDR, rim area)
 2. **GRU** — rekurentna neuralna mreža za longitudinalnu predikciju prosečne osetljivosti vidnog polja (VF_mean) na sledećoj kliničkoj poseti, na osnovu kompletne istorije pregleda pacijenta
